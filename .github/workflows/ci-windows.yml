@@ -1,0 +1,56 @@
+name: Windows
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+jobs:
+    build-and-test:
+        name: ${{ matrix.name }}
+        runs-on: windows-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - name: "Windows MSVC"
+                      compiler: msvc
+                      cmake-generator: 'Visual Studio 17 2022'
+                      cmake-options: ''
+                    
+                    - name: "Windows MinGW"
+                      compiler: gcc
+                      cmake-generator: 'MinGW Makefiles'
+                      cmake-options: '-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++'
+
+        steps:
+        - name: Checkout repository
+          uses: actions/checkout@v3
+          with:
+            submodules: 'recursive'
+
+        - name: Install Windows build tools
+          if: matrix.compiler != 'msvc'
+          run: |
+            choco install mingw
+          shell: bash
+        
+        - name: Configure CMake
+          run: |
+            cmake -B build -G "${{ matrix.cmake-generator }}" ${{ matrix.cmake-options }}
+          shell: bash
+
+        - name: Build
+          run: |
+            cmake --build build --config Release
+          shell: bash
+        
+        - name: Run tests
+          run: |
+            if [ "${{ matrix.compiler }}" == "gcc" ]; then
+                ./build/tests/logcoe_tests.exe
+            else
+                ./build/tests/Release/logcoe_tests.exe
+            fi 
+          shell: bash

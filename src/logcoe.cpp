@@ -97,7 +97,7 @@ namespace
 
     void LoggerImpl::writeToOutputs(const std::string &formattedMessage, LogLevel level, bool flush)
     {
-        if (static_cast<int>(level) > static_cast<int>(s_logLevel))
+        if (static_cast<int>(level) < static_cast<int>(s_logLevel))
             return;
 
         if (s_useConsole && s_consoleStream)

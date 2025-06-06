@@ -1,0 +1,47 @@
+name: macOS
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+jobs:
+    build-and-test:
+        name: ${{ matrix.name }}
+        runs-on: macos-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - name: "macOS Clang"
+                      compiler: clang
+                      cmake-generator: 'Ninja'
+                      cmake-options: ''
+
+        steps:
+        - name: Checkout repository
+          uses: actions/checkout@v3
+          with:
+            submodules: 'recursive'
+
+        - name: Install ninja-build
+          run: |
+            brew install ninja
+          shell: bash
+        
+        - name: Configure CMake
+          run: |
+            cmake -B build -G "${{ matrix.cmake-generator }}" ${{ matrix.cmake-options }}
+          shell: bash
+
+        - name: Build
+          run: |
+            cmake --build build --config Release
+          shell: bash
+        
+        - name: Run tests
+          working-directory: build/tests
+          run: |
+            ./logcoe_tests
+          shell: bash

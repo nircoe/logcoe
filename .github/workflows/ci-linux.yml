@@ -1,0 +1,53 @@
+name: Linux
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+jobs:
+    build-and-test:
+        name: ${{ matrix.name }}
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - name: "Linux GCC"
+                      compiler: gcc
+                      cmake-generator: 'Ninja'
+                      cmake-options: '-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++'
+
+                    - name: "Linux Clang"
+                      compiler: clang
+                      cmake-generator: 'Ninja'
+                      cmake-options: '-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++'
+
+        steps:
+        - name: Checkout repository
+          uses: actions/checkout@v3
+          with:
+            submodules: 'recursive'
+
+        - name: Install ninja-build
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y ninja-build
+          shell: bash
+        
+        - name: Configure CMake
+          run: |
+            cmake -B build -G "${{ matrix.cmake-generator }}" ${{ matrix.cmake-options }}
+          shell: bash
+
+        - name: Build
+          run: |
+            cmake --build build --config Release
+          shell: bash
+        
+        - name: Run tests
+          working-directory: build
+          run: |
+            ./tests/logcoe_tests
+          shell: bash
