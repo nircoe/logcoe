@@ -45,7 +45,8 @@ target_link_libraries(your_target PRIVATE logcoe)
 #include <logcoe.hpp>
 
 int main() {
-    // Initialize with INFO level, console enabled, file disabled
+    // Initialize with INFO level, no default source (empty string), console enabled, file disabled
+    // logs will be printed as [timestamp] [log_level]: <log_message>
     logcoe::initialize(logcoe::LogLevel::INFO, std::string{}, true, false);
     
     logcoe::info("Application started");
@@ -64,8 +65,9 @@ int main() {
 #include <fstream>
 
 int main() {
-    // Enable both console and file output with DEBUG level
-    logcoe::initialize(logcoe::LogLevel::DEBUG, std::string{},true, true, "app.log");
+    // Enable both console and file output with DEBUG level and default source as logcoe
+    // logs will be printed as [timestamp] [log_level] [logcoe]: <log_message>
+    logcoe::initialize(logcoe::LogLevel::DEBUG, "logcoe", true, true, "app.log");
     
     // Customize time format
     logcoe::setTimeFormat("%H:%M:%S");
