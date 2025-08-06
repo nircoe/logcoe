@@ -109,6 +109,7 @@ logcoe::initialize();
 // Full configuration
 logcoe::initialize(
     logcoe::LogLevel::DEBUG,  // Log level
+    "logcoe",                 //default source
     true,                     // Enable console
     true,                     // Enable file
     "application.log"         // Filename
