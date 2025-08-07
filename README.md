@@ -109,7 +109,7 @@ logcoe::initialize();
 // Full configuration
 logcoe::initialize(
     logcoe::LogLevel::DEBUG,  // Log level
-    "logcoe",                 //default source
+    "logcoe",                 // Default source
     true,                     // Enable console
     true,                     // Enable file
     "application.log"         // Filename
@@ -176,7 +176,7 @@ void worker_thread(int id) {
 }
 
 int main() {
-    logcoe::initialize(logcoe::LogLevel::INFO,  std::string{}, false, true, "concurrent.log");
+    logcoe::initialize(logcoe::LogLevel::INFO, std::string{}, false, true, "concurrent.log");
     
     std::vector<std::thread> workers;
     for (int i = 0; i < 10; ++i) {
