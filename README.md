@@ -45,8 +45,9 @@ target_link_libraries(your_target PRIVATE logcoe)
 #include <logcoe.hpp>
 
 int main() {
-    // Initialize with INFO level, console enabled, file disabled
-    logcoe::initialize(logcoe::LogLevel::INFO, true, false);
+    // Initialize with INFO level, no default source (empty string), console enabled, file disabled
+    // logs will be printed as [timestamp] [log_level]: <log_message>
+    logcoe::initialize(logcoe::LogLevel::INFO, std::string{}, true, false);
     
     logcoe::info("Application started");
     logcoe::warning("This is a warning message");
@@ -64,8 +65,9 @@ int main() {
 #include <fstream>
 
 int main() {
-    // Enable both console and file output with DEBUG level
-    logcoe::initialize(logcoe::LogLevel::DEBUG, true, true, "app.log");
+    // Enable both console and file output with DEBUG level and default source as logcoe
+    // logs will be printed as [timestamp] [log_level] [logcoe]: <log_message>
+    logcoe::initialize(logcoe::LogLevel::DEBUG, "logcoe", true, true, "app.log");
     
     // Customize time format
     logcoe::setTimeFormat("%H:%M:%S");
@@ -107,6 +109,7 @@ logcoe::initialize();
 // Full configuration
 logcoe::initialize(
     logcoe::LogLevel::DEBUG,  // Log level
+    "logcoe",                 // Default source
     true,                     // Enable console
     true,                     // Enable file
     "application.log"         // Filename
@@ -173,7 +176,7 @@ void worker_thread(int id) {
 }
 
 int main() {
-    logcoe::initialize(logcoe::LogLevel::INFO, false, true, "concurrent.log");
+    logcoe::initialize(logcoe::LogLevel::INFO, std::string{}, false, true, "concurrent.log");
     
     std::vector<std::thread> workers;
     for (int i = 0; i < 10; ++i) {
