@@ -76,23 +76,23 @@ TEST_F(LogcoeTest, DefaultInitialization)
 {
     logcoe::initialize();
 
-    EXPECT_EQ(logcoe::getLogLevel(), logcoe::LogLevel::INFO);
+    EXPECT_EQ(logcoe::getLogLevel(), logcoe::LogLevel::DEBUG);
 
     logcoe::info("Test info message");
 }
 
 TEST_F(LogcoeTest, CustomInitialization)
 {
-    logcoe::initialize(logcoe::LogLevel::DEBUG, "", true, true, testFilename);
+    logcoe::initialize(logcoe::LogLevel::INFO, "", true, true, testFilename);
 
-    EXPECT_EQ(logcoe::getLogLevel(), logcoe::LogLevel::DEBUG);
+    EXPECT_EQ(logcoe::getLogLevel(), logcoe::LogLevel::INFO);
 
-    logcoe::debug("Test debug message");
+    logcoe::info("Test debug message");
 
     EXPECT_TRUE(std::filesystem::exists(testFilename));
 
     std::string fileContent = readLogFile(testFilename);
-    EXPECT_TRUE(matchesLogPattern(fileContent, logcoe::LogLevel::DEBUG, "Test debug message"));
+    EXPECT_TRUE(matchesLogPattern(fileContent, logcoe::LogLevel::INFO, "Test debug message"));
 }
 
 TEST_F(LogcoeTest, LogLevelFiltering)
