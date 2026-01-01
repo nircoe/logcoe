@@ -13,7 +13,7 @@ namespace logcoe
         NONE
     };
 
-    void initialize(LogLevel level = LogLevel::INFO,
+    void initialize(LogLevel level = LogLevel::DEBUG,
                     const std::string &defaultSource = "",
                     bool enableConsole = true,
                     bool enableFile = false,

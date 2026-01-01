@@ -7,30 +7,30 @@ logcoe is designed as a lightweight, thread-safe logging library that provides f
 ## Component Architecture
 
 ```
-┌─────────────────────────────────────┐
-│         User Application            │
-│      (Client Code)                  │
-└───────────────┬─────────────────────┘
-                │
-┌───────────────▼─────────────────────┐
-│            logcoe API               │
-│    (Public Interface Functions)     │
-└───────────────┬─────────────────────┘
-                │
-┌───────────────▼─────────────────────┐
-│           LoggerImpl                │
-│    (Internal Implementation)        │
-│                                     │
-│  ┌─────────────┬─────────────────┐  │
-│  │   Mutex     │  Output Streams │  │
-│  │ Protection  │   Management    │  │
-│  └─────────────┴─────────────────┘  │
-│                                     │
-│  ┌─────────────┬─────────────────┐  │
-│  │ Log Level   │   Timestamp     │  │
-│  │ Filtering   │   Formatting    │  │
-│  └─────────────┴─────────────────┘  │
-└─────────────────────────────────────┘
+                ┌─────────────────────────────────────┐
+                │         User Application            │
+                │      (Client Code)                  │
+                └───────────────┬─────────────────────┘
+                                │
+                ┌───────────────▼─────────────────────┐
+                │            logcoe API               │
+                │    (Public Interface Functions)     │
+                └───────────────┬─────────────────────┘
+                                │
+                ┌───────────────▼─────────────────────┐
+                │           LoggerImpl                │
+                │    (Internal Implementation)        │
+                │                                     │
+                │  ┌─────────────┬─────────────────┐  │
+                │  │   Mutex     │  Output Streams │  │
+                │  │ Protection  │   Management    │  │
+                │  └─────────────┴─────────────────┘  │
+                │                                     │
+                │  ┌─────────────┬─────────────────┐  │
+                │  │ Log Level   │   Timestamp     │  │
+                │  │ Filtering   │   Formatting    │  │
+                │  └─────────────┴─────────────────┘  │
+                └─────────────────────────────────────┘
 ```
 
 ## Core Components
@@ -53,9 +53,7 @@ logcoe is designed as a lightweight, thread-safe logging library that provides f
 ```cpp
 static std::mutex s_mutex;
 ```
-- **Purpose**: Ensures thread-safe access to all shared state
-- **Scope**: Protects all static members and operations
-- **Granularity**: Single global mutex for simplicity and correctness
+- Ensures thread-safe access to all static members and operations
 
 #### State Management
 ```cpp
@@ -64,9 +62,7 @@ static bool s_useFile;
 static bool s_useConsole;
 static std::string s_timeFormat;
 ```
-- **Purpose**: Maintains current logger configuration
-- **Thread Safety**: All access protected by mutex
-- **Dynamic Updates**: Can be changed at runtime
+- Maintains current logger configuration, Can be changed at runtime
 
 #### Output Stream Management
 ```cpp
@@ -76,7 +72,6 @@ static std::ostream* s_consoleStream;
 ```
 - **File Output**: Direct file stream management with automatic opening/closing
 - **Console Output**: Configurable output stream (default: std::cout)
-- **Stream Safety**: All stream operations are mutex-protected
 
 ## Data Flow
 
@@ -139,18 +134,8 @@ Release mutex lock
 
 ## Thread Safety Implementation
 
-### Mutex Strategy
 - **Single Global Mutex**: `std::mutex s_mutex`
 - **Lock Scope**: Every public API call acquires lock for entire duration
-- **Benefits**: 
-  - Simple design, no deadlock risk
-  - Guaranteed consistency across all operations
-  - Atomic configuration changes
-
-### Performance Considerations
-- **Lock Granularity**: Coarse-grained locking for simplicity
-- **Lock Duration**: Minimal time holding locks
-- **Flush Control**: Optional flushing to reduce I/O under lock
 
 ### Thread Safety Guarantees
 1. **Configuration Consistency**: All threads see consistent logger state
@@ -172,12 +157,10 @@ std::tm tm_now;
 ```
 - **Windows**: Uses `localtime_s` for thread safety
 - **Unix/Linux/macOS**: Uses `localtime_r` for thread safety
-- **Format**: Standard `strftime` formatting across platforms
 
 ### File System Operations
 - **Path Handling**: Uses standard C++ filesystem operations
 - **File Permissions**: Relies on OS default permissions
-- **Directory Creation**: Not automatic, requires existing directories
 
 ### Build System Integration
 - **CMake**: FetchContent compatible
@@ -188,7 +171,7 @@ std::tm tm_now;
 
 ### Static Storage
 - **Lifetime**: All state stored in static variables
-- **Initialization**: Lazy initialization through first API call
+- **Initialization**: Lazy initialization through `initialize()`
 - **Cleanup**: Explicit cleanup through `shutdown()`
 
 ### Resource Management
@@ -198,28 +181,26 @@ std::tm tm_now;
 
 ## Log Level Filtering
 
-### Filtering Logic
-```cpp
-if (static_cast<int>(level) < static_cast<int>(s_logLevel))
-    return;
-```
-- **Numeric Comparison**: Log levels assigned integer values
-- **Early Return**: Filtered messages exit immediately
-- **Performance**: O(1) filtering with minimal overhead
-
 ### Level Hierarchy
 ```
 DEBUG (0) < INFO (1) < WARNING (2) < ERROR (3) < NONE (4)
 ```
 
+```cpp
+if (static_cast<int>(level) < static_cast<int>(s_logLevel))
+    return;
+```
+
+- **Numeric Comparison**: Log levels assigned integer values
+- **Early Return**: Filtered messages exit immediately
+
 ## Message Formatting
 
 ### Format Structure
 ```
-[timestamp] [LEVEL] [source]: message
+[timestamp] [LEVEL] [source]: <message>
 ```
 
-### Components
 - **Timestamp**: Configurable format using strftime
 - **Level**: String representation of LogLevel enum
 - **Source**: Optional component identifier
@@ -229,11 +210,11 @@ DEBUG (0) < INFO (1) < WARNING (2) < ERROR (3) < NONE (4)
 
 ### Stream Failures
 - **File Open Errors**: Logged to console, file output disabled
-- **Write Failures**: Silent failure, no cascading errors
+- **Write Failures**: Silent failure, no exceptions
 - **Configuration Errors**: Invalid settings ignored with warnings
 
 ### Exception Safety
-- **No Throws**: Public API designed to never throw
+- **No Exceptions**: Public API designed to never throw exceptions
 - **Resource Safety**: RAII ensures proper resource cleanup
 - **State Consistency**: Mutex ensures consistent state even with errors
 
@@ -243,8 +224,3 @@ DEBUG (0) < INFO (1) < WARNING (2) < ERROR (3) < NONE (4)
 - **Logging**: O(1) for level filtering, O(log_message_length) for formatting
 - **Configuration**: O(1) for most operations
 - **Thread Contention**: Minimal with short lock durations
-
-### Space Complexity
-- **Memory Usage**: Fixed overhead independent of message count
-- **File Growth**: Linear with number of logged messages
-- **Buffer Management**: No internal buffering beyond stream buffers
