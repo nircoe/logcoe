@@ -7,30 +7,29 @@ logcoe is designed as a lightweight, thread-safe logging library that provides f
 ## Component Architecture
 
 ```
-                ┌─────────────────────────────────────┐
-                │         User Application            │
-                │      (Client Code)                  │
-                └───────────────┬─────────────────────┘
-                                │
-                ┌───────────────▼─────────────────────┐
-                │            logcoe API               │
-                │    (Public Interface Functions)     │
-                └───────────────┬─────────────────────┘
-                                │
-                ┌───────────────▼─────────────────────┐
-                │           LoggerImpl                │
-                │    (Internal Implementation)        │
-                │                                     │
-                │  ┌─────────────┬─────────────────┐  │
-                │  │   Mutex     │  Output Streams │  │
-                │  │ Protection  │   Management    │  │
-                │  └─────────────┴─────────────────┘  │
-                │                                     │
-                │  ┌─────────────┬─────────────────┐  │
-                │  │ Log Level   │   Timestamp     │  │
-                │  │ Filtering   │   Formatting    │  │
-                │  └─────────────┴─────────────────┘  │
-                └─────────────────────────────────────┘
+                                        ┌─────────────────────────────────────┐
+                                        │           User Application          │
+                                        │            (Client Code)            │
+                                        └──────────────────┬──────────────────┘
+                                                           │
+                                        ┌──────────────────▼──────────────────┐
+                                        │              logcoe API             │
+                                        │     (Public Interface Functions)    │
+                                        └──────────────────┬──────────────────┘
+                                                           │
+                                        ┌──────────────────▼──────────────────┐
+                                        │              LoggerImpl             │
+                                        │      (Internal Implementation)      │
+                                        │                                     │
+                                        │  ┌─────────────┬─────────────────┐  │
+                                        │  │    Mutex    │  Output Streams │  │
+                                        │  │ Protection  │   Management    │  │
+                                        │  └─────────────┴─────────────────┘  │
+                                        │  ┌─────────────┬─────────────────┐  │
+                                        │  │  Log Level  │   Timestamp     │  │
+                                        │  │  Filtering  │   Formatting    │  │
+                                        │  └─────────────┴─────────────────┘  │
+                                        └─────────────────────────────────────┘
 ```
 
 ## Core Components
