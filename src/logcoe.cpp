@@ -5,6 +5,7 @@
 #include <mutex>
 #include <iostream>
 #include <fstream>
+#include <filesystem>
 
 using logcoe::LogLevel;
 
@@ -64,7 +65,7 @@ namespace
     std::ostream *LoggerImpl::s_consoleStream = &std::cout;
     bool LoggerImpl::s_useFile = false;
     bool LoggerImpl::s_useConsole = true;
-    std::string LoggerImpl::s_timeFormat = "%Y-%m-%d_%H-%M-%S";
+    std::string LoggerImpl::s_timeFormat = "%d/%m/%Y__%H:%M:%S";
 
     std::string LoggerImpl::getCurrentTimestamp()
     {
@@ -144,7 +145,7 @@ namespace
     {
         std::lock_guard<std::mutex> lock(s_mutex);
         if(s_initialized)
-            throw std::runtime_error("logcoe is already initialized, please shutdown before initializing again");
+            throw std::runtime_error("[logcoe] logcoe is already initialized, please shutdown before initializing again");
 
         s_initialized = true;
         s_logLevel = level;
@@ -165,15 +166,23 @@ namespace
             if (s_fileStream.is_open())
                 s_fileStream.close();
 
+            std::filesystem::path filepath(s_filename);
+
+            if (filepath.has_parent_path() && !std::filesystem::exists(filepath.parent_path()))
+                std::filesystem::create_directories(filepath.parent_path());
+            
+            if (std::filesystem::exists(filepath) && std::filesystem::is_regular_file(filepath))
+                std::filesystem::remove(filepath);
+
             s_fileStream.open(s_filename);
             if (!s_fileStream.is_open())
             {
-                writeToOutputs("ERROR: Failed to open log file: " + s_filename);
+                writeToOutputs("[logcoe] ERROR: Failed to open log file: " + s_filename);
                 s_useFile = false;
             }
         }
 
-        writeToOutputs("Logger initialized with level: " + getLogLevelAsString(s_logLevel));
+        writeToOutputs("[logcoe] Initialized, log level: " + getLogLevelAsString(s_logLevel));
     }
 
     void LoggerImpl::shutdown()
@@ -181,7 +190,7 @@ namespace
         std::lock_guard<std::mutex> lock(s_mutex);
         if(!s_initialized) return;
 
-        std::string shutdownMessage = "Logger shutting down";
+        std::string shutdownMessage = "[logcoe] shutting down";
         writeToOutputs(shutdownMessage);
 
         flush();
@@ -233,7 +242,7 @@ namespace
         s_fileStream.open(s_filename);
         if (!s_fileStream.is_open())
         {
-            writeToOutputs("ERROR: Failed to open log file: " + s_filename);
+            writeToOutputs("[logcoe] ERROR: Failed to open log file: " + s_filename);
             s_useFile = false;
         }
 
@@ -287,7 +296,7 @@ namespace
             std::size_t result = std::strftime(buffer, sizeof(buffer), format.c_str(), &tm_now);
             if (result == 0)
             {
-                writeToOutputs("ERROR: Invalid time format provided: \"" + format + "\". Keeping the current format");
+                writeToOutputs("[logcoe] ERROR: Invalid time format provided: \"" + format + "\". Keeping the current format");
                 return;
             }
 
@@ -296,7 +305,7 @@ namespace
         catch (const std::exception &e)
         {
             std::stringstream message;
-            message << "ERROR: Exception while validating time format: " << e.what();
+            message << "[logcoe] ERROR: Exception while validating time format: " << e.what();
             writeToOutputs(message.str());
         }
     }

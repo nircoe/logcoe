@@ -18,25 +18,17 @@
 
 ## Future Plans
 
-- ⏳ Log file rotation based on size or time
 - ⏳ Asynchronous logging for high-performance scenarios
-- ⏳ Structured logging (JSON/XML output formats)
 - ⏳ Custom log formatters and templates
 - ⏳ ANSI color support for console output
-- ⏳ Network logging (UDP/TCP remote logging)
-- ⏳ Syslog integration for Unix systems
-- ⏳ Windows Event Log integration
-- ⏳ Configuration file support
 - ⏳ Log filtering by source or pattern
 - ⏳ Multiple simultaneous log files
-- ⏳ Lock-free logging implementation
-- ⏳ Performance monitoring and statistics
 - ⏳ Log compression and archival
-- ⏳ Plugin architecture for custom outputs
 
 ## Feature Requests
 
 Have an idea for logcoe? Please open an issue on GitHub with the "enhancement" label.
+And of course, feel free to reach out at nircoe@gmail.com
 
 ## Versioning
 

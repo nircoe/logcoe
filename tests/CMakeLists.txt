@@ -7,7 +7,7 @@ else()
     FetchContent_Declare(
         testcoe
         GIT_REPOSITORY https://github.com/nircoe/testcoe.git
-        GIT_TAG v0.1.0
+        GIT_TAG v0.1.1
     )
     FetchContent_MakeAvailable(testcoe)
 endif()

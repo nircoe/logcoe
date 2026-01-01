@@ -11,10 +11,10 @@ Thread-safe C++ logging library with real-time output and customizable formattin
 logcoe is a lightweight, thread-safe C++ logging library designed for high-performance applications. It provides flexible output options and real-time logging with minimal overhead:
 
 ```
-[2025-06-07_14:30:25] [INFO]: Application started successfully
-[2025-06-07_14:30:25] [DEBUG] [NetworkManager]: Connecting to server 192.168.1.100
-[2025-06-07_14:30:26] [WARNING] [Database]: Connection timeout, retrying...
-[2025-06-07_14:30:27] [ERROR] [FileSystem]: Failed to open configuration file
+[06/07/2025__14:30:25] [INFO]: Application started successfully
+[06/07/2025__14:30:25] [DEBUG] [NetworkManager]: Connecting to server 192.168.1.100
+[06/07/2025__14:30:26] [WARNING] [Database]: Connection timeout, retrying...
+[06/07/2025__14:30:27] [ERROR] [FileSystem]: Failed to open configuration file
 ```
 
 Perfect for applications requiring reliable logging across multiple threads with customizable output destinations.
@@ -32,7 +32,7 @@ include(FetchContent)
 FetchContent_Declare(
     logcoe
     GIT_REPOSITORY https://github.com/nircoe/logcoe.git
-    GIT_TAG v0.1.0
+    GIT_TAG v0.1.1
 )
 FetchContent_MakeAvailable(logcoe)
 
@@ -90,14 +90,14 @@ int main() {
 
 ## Features
 
-- 🔒 **Thread-Safe** - Concurrent logging from multiple threads
-- 📊 **Multiple Log Levels** - DEBUG, INFO, WARNING, ERROR with runtime filtering
-- 🖥️ **Dual Output** - Console and file output simultaneously
-- ⚡ **High Performance** - Minimal overhead with optional flushing control
-- 🎨 **Customizable** - Configurable time formats and output streams
-- 🔄 **Dynamic Configuration** - Change settings during runtime
-- 📦 **Zero Dependencies** - Header-only public API, pure C++17
-- 🌐 **Cross-Platform** - Windows, Linux, macOS support
+- **Thread-Safe** - Concurrent logging from multiple threads
+- **Multiple Log Levels** - DEBUG, INFO, WARNING, ERROR with runtime filtering
+- **Dual Output** - Console and file output simultaneously
+- **High Performance** - Minimal overhead with optional flushing control
+- **Customizable** - Configurable time formats and output streams
+- **Dynamic Configuration** - Change settings during runtime
+- **Zero Dependencies** - Header-only public API, pure C++17
+- **Cross-Platform** - Windows, Linux, macOS support
 
 ## API Reference
 
@@ -115,7 +115,7 @@ logcoe::initialize(
     "application.log"         // Filename
 );
 
-// Clean shutdown
+// shutdown
 logcoe::shutdown();
 ```
 
