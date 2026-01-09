@@ -21,12 +21,12 @@ protected:
     {
         testFilename = "thread_test_" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) + ".log";
 
-        logcoe::shutdown();
+        while(logcoe::isInitialized()) { logcoe::shutdown(); }
     }
 
     void TearDown() override
     {
-        logcoe::shutdown();
+        while(logcoe::isInitialized()) { logcoe::shutdown(); }
 
         if (std::filesystem::exists(testFilename))
             std::filesystem::remove(testFilename);

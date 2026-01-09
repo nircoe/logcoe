@@ -13,7 +13,7 @@ namespace
 {
     class LoggerImpl
     {
-        static bool s_initialized;
+        static unsigned int s_initCounter;
         static LogLevel s_logLevel;
         static std::string s_defaultSource;
         static std::mutex s_mutex;
@@ -56,7 +56,7 @@ namespace
         static void flush();
     };
 
-    bool LoggerImpl::s_initialized = false;
+    unsigned int LoggerImpl::s_initCounter = 0;
     LogLevel LoggerImpl::s_logLevel = LogLevel::INFO;
     std::string LoggerImpl::s_defaultSource = "";
     std::mutex LoggerImpl::s_mutex;
@@ -69,7 +69,7 @@ namespace
 
     std::string LoggerImpl::getCurrentTimestamp()
     {
-        if(!s_initialized) return "";
+        if(s_initCounter == 0) return "";
 
         auto now = std::chrono::system_clock::now();
         std::time_t time_t_now = std::chrono::system_clock::to_time_t(now);
@@ -89,7 +89,7 @@ namespace
 
     std::string LoggerImpl::getLogLevelAsString(LogLevel level)
     {
-        if(!s_initialized) return "";
+        if(s_initCounter == 0) return "";
 
         switch (level)
         {
@@ -108,7 +108,7 @@ namespace
 
     void LoggerImpl::writeToOutputs(const std::string &formattedMessage, LogLevel level, bool flush)
     {
-        if (!s_initialized || static_cast<int>(level) < static_cast<int>(s_logLevel))
+        if (s_initCounter == 0 || static_cast<int>(level) < static_cast<int>(s_logLevel))
             return;
 
         if (s_useConsole && s_consoleStream)
@@ -129,7 +129,7 @@ namespace
     void LoggerImpl::log(LogLevel level, const std::string &message, const std::string &source, bool flush)
     {
         std::lock_guard<std::mutex> lock(s_mutex);
-        if(!s_initialized) return;
+        if(s_initCounter == 0) return;
 
         std::stringstream formattedMessage;
         formattedMessage << "[" << getCurrentTimestamp() << "] ";
@@ -144,10 +144,9 @@ namespace
     void LoggerImpl::initialize(LogLevel level, const std::string &defaultSource, bool enableConsole, bool enableFile, const std::string &filename)
     {
         std::lock_guard<std::mutex> lock(s_mutex);
-        if(s_initialized)
-            throw std::runtime_error("[logcoe] logcoe is already initialized, please shutdown before initializing again");
+        if(s_initCounter++ > 0)
+            return writeToOutputs("[logcoe] Already initialized, ignoring new configurations");
 
-        s_initialized = true;
         s_logLevel = level;
         s_defaultSource = defaultSource;
         s_useConsole = enableConsole;
@@ -188,7 +187,7 @@ namespace
     void LoggerImpl::shutdown()
     {
         std::lock_guard<std::mutex> lock(s_mutex);
-        if(!s_initialized) return;
+        if (--s_initCounter > 0) return;
 
         std::string shutdownMessage = "[logcoe] shutting down";
         writeToOutputs(shutdownMessage);
@@ -202,13 +201,13 @@ namespace
         s_useFile = false;
         s_logLevel = LogLevel::NONE;
         s_filename = "logcoe.log";
-        s_initialized = false;
+        s_initCounter = 0;
     }
 
     void LoggerImpl::setLogLevel(LogLevel level)
     {
         std::lock_guard<std::mutex> lock(s_mutex);
-        if(!s_initialized) return;
+        if(s_initCounter == 0) return;
 
         s_logLevel = level;
     }
@@ -216,7 +215,7 @@ namespace
     void LoggerImpl::setConsoleOutput(std::ostream &stream)
     {
         std::lock_guard<std::mutex> lock(s_mutex);
-        if(!s_initialized) return;
+        if(s_initCounter == 0) return;
 
         if (s_useConsole && s_consoleStream)
             s_consoleStream->flush();
@@ -227,7 +226,7 @@ namespace
     bool LoggerImpl::setFileOutput(const std::string &filename)
     {
         std::lock_guard<std::mutex> lock(s_mutex);
-        if(!s_initialized) return false;
+        if(s_initCounter == 0) return false;
 
         if (s_fileStream.is_open())
         {
@@ -252,7 +251,7 @@ namespace
     void LoggerImpl::disableConsoleOutput()
     {
         std::lock_guard<std::mutex> lock(s_mutex);
-        if(!s_initialized) return;
+        if(s_initCounter == 0) return;
 
         if (s_useConsole && s_consoleStream)
             s_consoleStream->flush();
@@ -263,7 +262,7 @@ namespace
     void LoggerImpl::disableFileOutput()
     {
         std::lock_guard<std::mutex> lock(s_mutex);
-        if(!s_initialized) return;
+        if(s_initCounter == 0) return;
 
         if (s_fileStream.is_open())
         {
@@ -279,7 +278,7 @@ namespace
     void LoggerImpl::setTimeFormat(const std::string &format)
     {
         std::lock_guard<std::mutex> lock(s_mutex);
-        if(!s_initialized) return;
+        if(s_initCounter == 0) return;
 
         try
         {
@@ -314,7 +313,7 @@ namespace
     {
         std::lock_guard<std::mutex> lock(s_mutex);
 
-        return s_initialized;
+        return s_initCounter > 0;
     }
 
     LogLevel LoggerImpl::getLogLevel()
@@ -346,7 +345,7 @@ namespace
 
     void LoggerImpl::flush()
     {
-        if(!s_initialized) return;
+        if(s_initCounter == 0) return;
         if (s_useConsole && s_consoleStream)
             s_consoleStream->flush();
         if (s_useFile && s_fileStream.is_open())
