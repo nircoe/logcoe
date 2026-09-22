@@ -4,12 +4,14 @@ on:
     push:
         branches: [main]
     pull_request:
+        types: [opened, synchronize, reopened, ready_for_review]
         branches: [main]
 
 jobs:
     build-and-test:
         name: ${{ matrix.name }}
         runs-on: macos-latest
+        if: github.event.pull_request.draft == false || github.event_name == 'push'
         strategy:
             fail-fast: false
             matrix:
