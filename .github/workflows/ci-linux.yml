@@ -16,15 +16,23 @@ jobs:
             fail-fast: false
             matrix:
                 include:
-                    - name: "Linux GCC"
+                    - name: "Linux GCC Debug"
                       compiler: gcc
                       cmake-generator: 'Ninja'
-                      cmake-options: '-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++'
+                      cmake-options: '-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_BUILD_TYPE=Debug'
+                      test-target: logcoe_tests
 
-                    - name: "Linux Clang"
+                    - name: "Linux Clang Debug"
                       compiler: clang
                       cmake-generator: 'Ninja'
-                      cmake-options: '-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++'
+                      cmake-options: '-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Debug'
+                      test-target: logcoe_tests
+
+                    - name: "Linux GCC Release"
+                      compiler: gcc
+                      cmake-generator: 'Ninja'
+                      cmake-options: '-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_BUILD_TYPE=Release'
+                      test-target: logcoe_strip_tests
 
         steps:
         - name: Checkout repository
@@ -51,5 +59,5 @@ jobs:
         - name: Run tests
           working-directory: build
           run: |
-            ./tests/logcoe_tests
+            ./tests/${{ matrix.test-target }}
           shell: bash
