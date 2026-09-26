@@ -16,15 +16,23 @@ jobs:
             fail-fast: false
             matrix:
                 include:
-                    - name: "Windows MSVC"
+                    - name: "Windows MSVC Debug"
                       compiler: msvc
                       cmake-generator: 'Ninja'
-                      cmake-options: '-DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl'
+                      cmake-options: '-DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DCMAKE_BUILD_TYPE=Debug'
+                      test-target: logcoe_tests
                     
-                    - name: "Windows MinGW"
+                    - name: "Windows MinGW Debug"
                       compiler: gcc
                       cmake-generator: 'MinGW Makefiles'
-                      cmake-options: '-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++'
+                      cmake-options: '-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_BUILD_TYPE=Debug'
+                      test-target: logcoe_tests
+                    
+                    - name: "Windows MSVC Release"
+                      compiler: msvc
+                      cmake-generator: 'Ninja'
+                      cmake-options: '-DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DCMAKE_BUILD_TYPE=Release'
+                      test-target: logcoe_strip_tests
 
         steps:
         - name: Checkout repository
@@ -54,5 +62,5 @@ jobs:
         
         - name: Run tests
           run: |
-            ./build/tests/logcoe_tests.exe
+            ./build/tests/${{ matrix.test-target }}.exe
           shell: bash
