@@ -46,6 +46,12 @@ jobs:
             choco install mingw
           shell: bash
 
+        - name: Install Ninja
+          if: matrix.compiler == 'msvc'
+          run: |
+            choco install ninja
+          shell: bash
+
         - name: Setup MSVC dev environment
           if: matrix.compiler == 'msvc'
           uses: ilammy/msvc-dev-cmd@v1.13.0

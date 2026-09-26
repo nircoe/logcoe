@@ -215,7 +215,9 @@ or file I/O gets compiled in:
 - `getLogLevel()` returns `LogLevel::NONE`.
 - `setFileOutput(...)` returns `false` and never creates a file.
 
-No opt-in macro or CMake option needed, it's automatic whenever `NDEBUG` is defined.
+No opt-in macro or CMake option needed, it's automatic whenever `NDEBUG` is defined. That includes
+`RelWithDebInfo` and `MinSizeRel`, since CMake defines `NDEBUG` for those build types too, not just
+`Release`.
 
 ## Documentation
 

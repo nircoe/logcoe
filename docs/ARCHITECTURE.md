@@ -173,7 +173,9 @@ Under `NDEBUG`, the entire anonymous-namespace `LoggerImpl` implementation is co
 `logcoe::` wrapper functions in `src/logcoe.cpp` switch to a separate `#ifdef NDEBUG` branch of
 no-op stubs, so every call site keeps compiling unchanged. Two stubs return a fixed value instead
 of an empty body, since there's no real state left to report: `isInitialized()` always returns
-`false`, and `getLogLevel()` always returns `LogLevel::NONE`.
+`false`, and `getLogLevel()` always returns `LogLevel::NONE`. The guard is on the bare `NDEBUG`
+macro, not a check for a "Release" build type specifically, so `RelWithDebInfo` and `MinSizeRel`
+trigger the same stripping since CMake defines `NDEBUG` for them too.
 
 ## Memory Management
 
