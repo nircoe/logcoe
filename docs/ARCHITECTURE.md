@@ -166,6 +166,15 @@ std::tm tm_now;
 - **Compiler Support**: C++17 standard requirements
 - **Library Type**: Static library
 
+## Release Build Stripping
+
+Under `NDEBUG`, the entire anonymous-namespace `LoggerImpl` implementation is compiled out via
+`#ifndef NDEBUG`, so a Release build carries none of its code or static state. The public
+`logcoe::` wrapper functions in `src/logcoe.cpp` switch to a separate `#ifdef NDEBUG` branch of
+no-op stubs, so every call site keeps compiling unchanged. Two stubs return a fixed value instead
+of an empty body, since there's no real state left to report: `isInitialized()` always returns
+`false`, and `getLogLevel()` always returns `LogLevel::NONE`.
+
 ## Memory Management
 
 ### Static Storage

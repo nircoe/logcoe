@@ -204,6 +204,19 @@ int main() {
 - **Log Levels**: Higher log levels filter out lower-priority messages at minimal cost
 - **Thread Contention**: Minimal mutex contention with efficient lock granularity
 
+## Release Builds
+
+Defining `NDEBUG` (e.g. `-DCMAKE_BUILD_TYPE=Release`) strips logcoe down to no-op stubs at compile
+time. Every call site keeps working with zero code changes, but none of the logging, formatting,
+or file I/O gets compiled in:
+
+- `initialize`, `debug`/`info`/`warning`/`error`, `flush`, `shutdown`, and the setters do nothing.
+- `isInitialized()` returns `false`.
+- `getLogLevel()` returns `LogLevel::NONE`.
+- `setFileOutput(...)` returns `false` and never creates a file.
+
+No opt-in macro or CMake option needed, it's automatic whenever `NDEBUG` is defined.
+
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md) - Internal design and implementation details
