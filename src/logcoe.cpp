@@ -9,6 +9,7 @@
 
 using logcoe::LogLevel;
 
+#ifndef NDEBUG
 namespace
 {
     class LoggerImpl
@@ -352,9 +353,32 @@ namespace
             s_fileStream.flush();
     }
 }
+#endif
 
 namespace logcoe
 {
+#ifdef NDEBUG
+    void initialize(LogLevel level, const std::string &defaultSource, bool enableConsole,
+                    bool enableFile, const std::string &filename) { }
+
+    void shutdown() { }
+
+    void setLogLevel(LogLevel level) { }
+    void setConsoleOutput(std::ostream &stream) { }
+    bool setFileOutput(const std::string &filename) { return false; }
+    void disableConsoleOutput() { }
+    void disableFileOutput() { }
+    void setTimeFormat(const std::string &format) { }
+
+    bool isInitialized() { return false; }
+    LogLevel getLogLevel() { return LogLevel::NONE; }
+
+    void debug(const std::string &message, const std::string &source, bool flush) { }
+    void info(const std::string &message, const std::string &source, bool flush) { }
+    void warning(const std::string &message, const std::string &source, bool flush) { }
+    void error(const std::string &message, const std::string &source, bool flush) { }
+    void flush() { }
+#else
     void initialize(LogLevel level, const std::string &defaultSource, bool enableConsole,
                     bool enableFile, const std::string &filename) { LoggerImpl::initialize(level, defaultSource, enableConsole, enableFile, filename); }
 
@@ -375,5 +399,6 @@ namespace logcoe
     void warning(const std::string &message, const std::string &source, bool flush) { LoggerImpl::warning(message, source, flush); }
     void error(const std::string &message, const std::string &source, bool flush) { LoggerImpl::error(message, source, flush); }
     void flush() { LoggerImpl::flush(); }
+#endif
 
 } // namespace logcoe

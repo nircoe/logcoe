@@ -14,11 +14,7 @@ endif()
 
 ignore_external_warnings(testcoe)
 
-enable_testing()
-
 add_executable(logcoe_tests main.cpp logcoe_test.cpp logcoe_thread_test.cpp)
-
-copy_mingw_dlls_to_target(logcoe_tests)
 
 target_link_libraries(logcoe_tests
     PRIVATE
@@ -31,3 +27,19 @@ add_custom_target(run_logcoe_tests
     DEPENDS logcoe_tests
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
+
+add_executable(logcoe_strip_tests main.cpp logcoe_strip_test.cpp)
+
+target_link_libraries(logcoe_strip_tests
+    PRIVATE
+        logcoe
+        testcoe
+)
+
+add_custom_target(run_logcoe_strip_tests
+    COMMAND logcoe_strip_tests
+    DEPENDS logcoe_strip_tests
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+)
+
+copy_mingw_dlls_to_targets(logcoe_tests logcoe_strip_tests)

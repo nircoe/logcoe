@@ -4,20 +4,29 @@ on:
     push:
         branches: [main]
     pull_request:
+        types: [opened, synchronize, reopened, ready_for_review]
         branches: [main]
 
 jobs:
     build-and-test:
         name: ${{ matrix.name }}
         runs-on: macos-latest
+        if: github.event.pull_request.draft == false || github.event_name == 'push'
         strategy:
             fail-fast: false
             matrix:
                 include:
-                    - name: "macOS Clang"
+                    - name: "macOS Clang Debug"
                       compiler: clang
                       cmake-generator: 'Ninja'
-                      cmake-options: ''
+                      cmake-options: '-DCMAKE_BUILD_TYPE=Debug'
+                      test-target: logcoe_tests
+
+                    - name: "macOS Clang Release"
+                      compiler: clang
+                      cmake-generator: 'Ninja'
+                      cmake-options: '-DCMAKE_BUILD_TYPE=Release'
+                      test-target: logcoe_strip_tests
 
         steps:
         - name: Checkout repository
@@ -43,5 +52,5 @@ jobs:
         - name: Run tests
           working-directory: build/tests
           run: |
-            ./logcoe_tests
+            ./${{ matrix.test-target }}
           shell: bash
