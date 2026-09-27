@@ -165,7 +165,7 @@ TEST_F(LogcoeThreadTest, ConcurrentLogLevelChange)
     std::vector<std::thread> threads;
     std::atomic<bool> start_flag(false);
 
-    threads.emplace_back([this, &start_flag]()
+    threads.emplace_back([&start_flag]()
     {
         while (!start_flag.load()) 
         {
@@ -185,7 +185,7 @@ TEST_F(LogcoeThreadTest, ConcurrentLogLevelChange)
 
     for (int level = 0; level < 3; level++)
     {
-        threads.emplace_back([this, level, &start_flag]()
+        threads.emplace_back([level, &start_flag]()
         {
             while (!start_flag.load()) 
             {
@@ -264,7 +264,7 @@ TEST_F(LogcoeThreadTest, ConcurrentOutputConfigChange)
         } 
     });
 
-    threads.emplace_back([this, &start_flag]()
+    threads.emplace_back([&start_flag]()
     {
         while (!start_flag.load()) 
         {

@@ -358,25 +358,24 @@ namespace
 namespace logcoe
 {
 #ifdef NDEBUG
-    void initialize(LogLevel level, const std::string &defaultSource, bool enableConsole,
-                    bool enableFile, const std::string &filename) { }
+    void initialize(LogLevel, const std::string &, bool, bool, const std::string &) { }
 
     void shutdown() { }
 
-    void setLogLevel(LogLevel level) { }
-    void setConsoleOutput(std::ostream &stream) { }
-    bool setFileOutput(const std::string &filename) { return false; }
+    void setLogLevel(LogLevel) { }
+    void setConsoleOutput(std::ostream &) { }
+    bool setFileOutput(const std::string &) { return false; }
     void disableConsoleOutput() { }
     void disableFileOutput() { }
-    void setTimeFormat(const std::string &format) { }
+    void setTimeFormat(const std::string &) { }
 
     bool isInitialized() { return false; }
     LogLevel getLogLevel() { return LogLevel::NONE; }
 
-    void debug(const std::string &message, const std::string &source, bool flush) { }
-    void info(const std::string &message, const std::string &source, bool flush) { }
-    void warning(const std::string &message, const std::string &source, bool flush) { }
-    void error(const std::string &message, const std::string &source, bool flush) { }
+    void debug(const std::string &, const std::string &, bool) { }
+    void info(const std::string &, const std::string &, bool) { }
+    void warning(const std::string &, const std::string &, bool) { }
+    void error(const std::string &, const std::string &, bool) { }
     void flush() { }
 #else
     void initialize(LogLevel level, const std::string &defaultSource, bool enableConsole,
