@@ -163,7 +163,7 @@ std::tm tm_now;
 
 ### Build System Integration
 - **CMake**: FetchContent compatible
-- **Compiler Support**: C++17 standard requirements
+- **Compiler Support**: C++23 standard requirements
 - **Library Type**: Static library
 
 ## Release Build Stripping
