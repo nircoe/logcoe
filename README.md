@@ -20,8 +20,8 @@ logcoe is a lightweight, thread-safe C++ logging library designed for high-perfo
 Perfect for applications requiring reliable logging across multiple threads with customizable output destinations.
 
 ## Dependencies
-- **C++17 or later** - Modern C++ standard support
-- **CMake 3.14+** - Build system
+- **C++23 or later** - Modern C++ standard support
+- **CMake 3.22+** - Build system
 
 ## Quick Start
 
@@ -96,7 +96,7 @@ int main() {
 - **High Performance** - Minimal overhead with optional flushing control
 - **Customizable** - Configurable time formats and output streams
 - **Dynamic Configuration** - Change settings during runtime
-- **Zero Dependencies** - Header-only public API, pure C++17
+- **Zero Dependencies** - Header-only public API, pure C++23
 - **Cross-Platform** - Windows, Linux, macOS support
 
 ## API Reference
@@ -194,8 +194,8 @@ int main() {
 
 ## Requirements
 
-- **Compiler**: C++17 compatible (GCC 7+, Clang 5+, MSVC 2017+)
-- **Build System**: CMake 3.14+
+- **Compiler**: C++23 compatible
+- **Build System**: CMake 3.22+
 - **Platforms**: Windows, Linux, macOS
 
 ## Performance Considerations

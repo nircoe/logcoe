@@ -5,8 +5,8 @@ Thank you for your interest in contributing to logcoe!
 ## Development Setup
 
 ### Prerequisites
-- CMake 3.14+
-- C++17 compatible compiler
+- CMake 3.22+
+- C++23 compatible compiler
 - Git
 
 ### Building from Source
