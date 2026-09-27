@@ -22,6 +22,8 @@ target_link_libraries(logcoe_tests
         testcoe
 )
 
+enable_strict_warnings(logcoe_tests)
+
 add_custom_target(run_logcoe_tests
     COMMAND logcoe_tests
     DEPENDS logcoe_tests
@@ -35,6 +37,8 @@ target_link_libraries(logcoe_strip_tests
         logcoe
         testcoe
 )
+
+enable_strict_warnings(logcoe_strip_tests)
 
 add_custom_target(run_logcoe_strip_tests
     COMMAND logcoe_strip_tests
