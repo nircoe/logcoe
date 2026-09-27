@@ -34,11 +34,6 @@ jobs:
           with:
             submodules: 'recursive'
 
-        - name: Install ninja-build
-          run: |
-            brew install ninja
-          shell: bash
-        
         - name: Configure CMake
           run: |
             cmake -B build -G "${{ matrix.cmake-generator }}" ${{ matrix.cmake-options }} -DLOGCOE_BUILD_TESTS=ON
