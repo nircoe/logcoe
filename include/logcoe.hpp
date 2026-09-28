@@ -4,36 +4,36 @@
 
 namespace logcoe
 {
-    enum class LogLevel
+    enum class log_level
     {
-        DEBUG,
-        INFO,
-        WARNING,
-        ERROR,
-        NONE
+        debug,
+        info,
+        warning,
+        error,
+        none
     };
 
-    void initialize(LogLevel level = LogLevel::DEBUG,
-                    const std::string &defaultSource = "",
-                    bool enableConsole = true,
-                    bool enableFile = false,
+    void initialize(log_level level = log_level::debug,
+                    const std::string &default_source = "",
+                    bool enable_console = true,
+                    bool enable_file = false,
                     const std::string &filename = "logcoe.log");
     void shutdown();
 
-    void setLogLevel(LogLevel level);
-    void setConsoleOutput(std::ostream &stream);
-    bool setFileOutput(const std::string &filename);
-    void disableConsoleOutput();
-    void disableFileOutput();
-    void setTimeFormat(const std::string &format);
+    void set_log_level(log_level level);
+    void set_console_output(std::ostream &stream);
+    bool set_file_output(const std::string &filename);
+    void disable_console_output();
+    void disable_file_output();
+    void set_time_format(const std::string &format);
 
-    bool isInitialized();
-    LogLevel getLogLevel();
+    bool is_initialized();
+    log_level get_log_level();
 
-    void debug(const std::string &message, const std::string &source = "", bool flush = true);
-    void info(const std::string &message, const std::string &source = "", bool flush = true);
-    void warning(const std::string &message, const std::string &source = "", bool flush = true);
-    void error(const std::string &message, const std::string &source = "", bool flush = true);
+    void debug(const std::string &message, const std::string &source = "", bool flush_ = true);
+    void info(const std::string &message, const std::string &source = "", bool flush_ = true);
+    void warning(const std::string &message, const std::string &source = "", bool flush_ = true);
+    void error(const std::string &message, const std::string &source = "", bool flush_ = true);
     void flush();
 
 } // namespace logcoe
