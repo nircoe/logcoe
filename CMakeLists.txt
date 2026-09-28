@@ -19,7 +19,7 @@ target_include_directories(logcoe
 
 include(cmake/utils.cmake)
 
-enable_strict_warnings(logcoe)
+logcoe_enable_strict_warnings(logcoe)
 
 option(LOGCOE_BUILD_TESTS "Build the logcoe test suite" OFF)
 if(LOGCOE_BUILD_TESTS)
