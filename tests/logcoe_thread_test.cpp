@@ -21,12 +21,12 @@ protected:
     {
         testFilename = "thread_test_" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) + ".log";
 
-        while(logcoe::isInitialized()) { logcoe::shutdown(); }
+        while(logcoe::is_initialized()) { logcoe::shutdown(); }
     }
 
     void TearDown() override
     {
-        while(logcoe::isInitialized()) { logcoe::shutdown(); }
+        while(logcoe::is_initialized()) { logcoe::shutdown(); }
 
         if (std::filesystem::exists(testFilename))
             std::filesystem::remove(testFilename);
@@ -68,7 +68,7 @@ protected:
 
 TEST_F(LogcoeThreadTest, ConcurrentFileLogging)
 {
-    logcoe::initialize(logcoe::LogLevel::DEBUG, "", false, true, testFilename);
+    logcoe::initialize(logcoe::log_level::debug, "", false, true, testFilename);
 
     std::vector<std::thread> threads;
     std::atomic<int> thread_id_counter(0);
@@ -114,8 +114,8 @@ TEST_F(LogcoeThreadTest, ConcurrentFileLogging)
 
 TEST_F(LogcoeThreadTest, ConcurrentConsoleOutput)
 {
-    logcoe::initialize(logcoe::LogLevel::DEBUG, "", true, false);
-    logcoe::setConsoleOutput(testStream);
+    logcoe::initialize(logcoe::log_level::debug, "", true, false);
+    logcoe::set_console_output(testStream);
 
     std::vector<std::thread> threads;
     std::atomic<int> thread_id_counter(0);
@@ -160,7 +160,7 @@ TEST_F(LogcoeThreadTest, ConcurrentConsoleOutput)
 
 TEST_F(LogcoeThreadTest, ConcurrentLogLevelChange)
 {
-    logcoe::initialize(logcoe::LogLevel::INFO, "", false, true, testFilename);
+    logcoe::initialize(logcoe::log_level::info, "", false, true, testFilename);
 
     std::vector<std::thread> threads;
     std::atomic<bool> start_flag(false);
@@ -174,11 +174,11 @@ TEST_F(LogcoeThreadTest, ConcurrentLogLevelChange)
         
         for (int i = 0; i < 5; i++) 
         {
-            logcoe::setLogLevel(logcoe::LogLevel::DEBUG);
+            logcoe::set_log_level(logcoe::log_level::debug);
             std::this_thread::sleep_for(std::chrono::milliseconds(20));
-            logcoe::setLogLevel(logcoe::LogLevel::WARNING);
+            logcoe::set_log_level(logcoe::log_level::warning);
             std::this_thread::sleep_for(std::chrono::milliseconds(20));
-            logcoe::setLogLevel(logcoe::LogLevel::INFO);
+            logcoe::set_log_level(logcoe::log_level::info);
             std::this_thread::sleep_for(std::chrono::milliseconds(20));
         } 
     });
@@ -249,17 +249,17 @@ TEST_F(LogcoeThreadTest, ConcurrentOutputConfigChange)
         
         for (int i = 0; i < 5; i++) 
         {
-            logcoe::setFileOutput(testFilename);
+            logcoe::set_file_output(testFilename);
             std::this_thread::sleep_for(std::chrono::milliseconds(20));
             
-            logcoe::disableFileOutput();
+            logcoe::disable_file_output();
             std::this_thread::sleep_for(std::chrono::milliseconds(20));
             
             std::stringstream temp;
-            logcoe::setConsoleOutput(temp);
+            logcoe::set_console_output(temp);
             std::this_thread::sleep_for(std::chrono::milliseconds(20));
             
-            logcoe::setConsoleOutput(std::cout);
+            logcoe::set_console_output(std::cout);
             std::this_thread::sleep_for(std::chrono::milliseconds(20));
         } 
     });
