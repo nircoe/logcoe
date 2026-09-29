@@ -12,16 +12,16 @@ using logcoe::log_level;
 #ifndef NDEBUG
 namespace
 {
-    unsigned int g_init_counter = 0;
-    log_level g_log_level = log_level::info;
-    std::string g_default_source = "";
-    std::mutex g_mutex;
-    std::string g_filename = "logcoe.log";
+    unsigned int  g_init_counter = 0;
+    log_level     g_log_level = log_level::info;
+    std::string   g_default_source = "";
+    std::mutex    g_mutex;
+    std::string   g_filename = "logcoe.log";
     std::ofstream g_file_stream;
     std::ostream *g_console_stream = &std::cout;
-    bool g_use_file = false;
-    bool g_use_console = true;
-    std::string g_time_format = "%d/%m/%Y__%H:%M:%S";
+    bool          g_use_file = false;
+    bool          g_use_console = true;
+    std::string   g_time_format = "%d/%m/%Y__%H:%M:%S";
 
     std::string get_current_timestamp()
     {
