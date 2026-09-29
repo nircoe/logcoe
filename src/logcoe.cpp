@@ -85,16 +85,26 @@ namespace
         }
     }
 
+    void flush_streams()
+    {
+        if (g_use_console && g_console_stream)
+            g_console_stream->flush();
+        if (g_use_file && g_file_stream.is_open())
+            g_file_stream.flush();
+    }
+
     void log(log_level level, const std::string &message, const std::string &source, bool flush_)
     {
         std::lock_guard<std::mutex> lock(g_mutex);
         if(g_init_counter == 0) return;
 
+        const std::string &resolved_source = source.empty() ? g_default_source : source;
+
         std::stringstream formatted_message;
         formatted_message << "[" << get_current_timestamp() << "] ";
         formatted_message << "[" << get_log_level_as_string(level) << "]";
-        if (!source.empty())
-            formatted_message << " [" << source << "]";
+        if (!resolved_source.empty())
+            formatted_message << " [" << resolved_source << "]";
         formatted_message << ": " << message;
 
         write_to_outputs(formatted_message.str(), level, flush_);
@@ -149,22 +159,21 @@ namespace
 
     void flush()
     {
-        if(g_init_counter == 0) return;
-        if (g_use_console && g_console_stream)
-            g_console_stream->flush();
-        if (g_use_file && g_file_stream.is_open())
-            g_file_stream.flush();
+        std::lock_guard<std::mutex> lock(g_mutex);
+        if (g_init_counter == 0) return;
+        flush_streams();
     }
 
     void shutdown()
     {
         std::lock_guard<std::mutex> lock(g_mutex);
+        if (g_init_counter == 0) return;
         if (--g_init_counter > 0) return;
 
         std::string shutdown_message = "[logcoe] shutting down";
         write_to_outputs(shutdown_message);
 
-        flush();
+        flush_streams();
         if (g_file_stream.is_open())
             g_file_stream.close();
 
@@ -297,22 +306,22 @@ namespace
 
     void debug(const std::string &message, const std::string &source, bool flush_)
     {
-        log(log_level::debug, message, source.empty() ? g_default_source : source, flush_);
+        log(log_level::debug, message, source, flush_);
     }
 
     void info(const std::string &message, const std::string &source, bool flush_)
     {
-        log(log_level::info, message, source.empty() ? g_default_source : source, flush_);
+        log(log_level::info, message, source, flush_);
     }
 
     void warning(const std::string &message, const std::string &source, bool flush_)
     {
-        log(log_level::warning, message, source.empty() ? g_default_source : source, flush_);
+        log(log_level::warning, message, source, flush_);
     }
 
     void error(const std::string &message, const std::string &source, bool flush_)
     {
-        log(log_level::error, message, source.empty() ? g_default_source : source, flush_);
+        log(log_level::error, message, source, flush_);
     }
 
     } // namespace internal

@@ -73,7 +73,7 @@ The CI runs the following checks:
 - Follow existing naming conventions:
   - `snake_case` for functions, variables, types, and enumerators
   - `g_` prefix for anonymous-namespace variables (implicit internal linkage)
-  - Trailing underscore for parameters that shadow another identifier in scope (e.g. `flush_` shadows the `flush()` function)
+  - Trailing underscore for parameters that would otherwise shadow another identifier in scope (e.g. a `flush` parameter is renamed to `flush_` to avoid shadowing the `flush()` function)
 - Keep lines under 120 characters
 - Add comments for complex logic
 - Use `const` and `constexpr` where appropriate
