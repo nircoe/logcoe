@@ -97,11 +97,11 @@ namespace
         write_to_outputs(formatted_message.str(), level, flush_);
     }
 
-    void initialize(log_level level = log_level::info,
-                    const std::string &default_source = "",
-                    bool enable_console = true,
-                    bool enable_file = false,
-                    const std::string &filename = "logcoe.log")
+    void initialize(log_level level,
+                    const std::string &default_source,
+                    bool enable_console,
+                    bool enable_file,
+                    const std::string &filename)
     {
         std::lock_guard<std::mutex> lock(g_mutex);
         if(g_init_counter++ > 0)
@@ -144,7 +144,14 @@ namespace
         write_to_outputs("[logcoe] Initialized, log level: " + get_log_level_as_string(g_log_level));
     }
 
-    void flush();
+    void flush()
+    {
+        if(g_init_counter == 0) return;
+        if (g_use_console && g_console_stream)
+            g_console_stream->flush();
+        if (g_use_file && g_file_stream.is_open())
+            g_file_stream.flush();
+    }
 
     void shutdown()
     {
@@ -285,33 +292,24 @@ namespace
         return g_log_level;
     }
 
-    void debug(const std::string &message, const std::string &source = "", bool flush_ = true)
+    void debug(const std::string &message, const std::string &source, bool flush_)
     {
         log(log_level::debug, message, source.empty() ? g_default_source : source, flush_);
     }
 
-    void info(const std::string &message, const std::string &source = "", bool flush_ = true)
+    void info(const std::string &message, const std::string &source, bool flush_)
     {
         log(log_level::info, message, source.empty() ? g_default_source : source, flush_);
     }
 
-    void warning(const std::string &message, const std::string &source = "", bool flush_ = true)
+    void warning(const std::string &message, const std::string &source, bool flush_)
     {
         log(log_level::warning, message, source.empty() ? g_default_source : source, flush_);
     }
 
-    void error(const std::string &message, const std::string &source = "", bool flush_ = true)
+    void error(const std::string &message, const std::string &source, bool flush_)
     {
         log(log_level::error, message, source.empty() ? g_default_source : source, flush_);
-    }
-
-    void flush()
-    {
-        if(g_init_counter == 0) return;
-        if (g_use_console && g_console_stream)
-            g_console_stream->flush();
-        if (g_use_file && g_file_stream.is_open())
-            g_file_stream.flush();
     }
 }
 #endif
