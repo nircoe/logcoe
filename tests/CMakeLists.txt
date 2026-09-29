@@ -12,7 +12,7 @@ else()
     FetchContent_MakeAvailable(testcoe)
 endif()
 
-ignore_external_warnings(testcoe)
+logcoe_ignore_external_warnings(testcoe)
 
 add_executable(logcoe_tests main.cpp logcoe_test.cpp logcoe_thread_test.cpp)
 
@@ -22,7 +22,7 @@ target_link_libraries(logcoe_tests
         testcoe
 )
 
-enable_strict_warnings(logcoe_tests)
+logcoe_enable_strict_warnings(logcoe_tests)
 
 add_custom_target(run_logcoe_tests
     COMMAND logcoe_tests
@@ -38,7 +38,7 @@ target_link_libraries(logcoe_strip_tests
         testcoe
 )
 
-enable_strict_warnings(logcoe_strip_tests)
+logcoe_enable_strict_warnings(logcoe_strip_tests)
 
 add_custom_target(run_logcoe_strip_tests
     COMMAND logcoe_strip_tests
@@ -46,4 +46,4 @@ add_custom_target(run_logcoe_strip_tests
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-copy_mingw_dlls_to_targets(logcoe_tests logcoe_strip_tests)
+logcoe_copy_mingw_dlls_to_targets(logcoe_tests logcoe_strip_tests)

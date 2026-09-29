@@ -2,7 +2,7 @@
 
 ## Overview
 
-logcoe is designed as a lightweight, thread-safe logging library that provides flexible output management with minimal performance overhead. The architecture follows a singleton pattern with internal implementation hiding for API stability.
+logcoe is designed as a lightweight, thread-safe logging library that provides flexible output management with minimal performance overhead. The public API hides all implementation details through an anonymous namespace containing free functions and static state, maintaining API stability across changes.
 
 ## Component Architecture
 
@@ -18,8 +18,8 @@ logcoe is designed as a lightweight, thread-safe logging library that provides f
                                         └──────────────────┬──────────────────┘
                                                            │
                                         ┌──────────────────▼──────────────────┐
-                                        │              LoggerImpl             │
-                                        │      (Internal Implementation)      │
+                                        │    Anonymous Namespace (Internal)   │
+                                        │       (Free Functions & State)      │
                                         │                                     │
                                         │  ┌─────────────┬─────────────────┐  │
                                         │  │    Mutex    │  Output Streams │  │
@@ -41,33 +41,33 @@ logcoe is designed as a lightweight, thread-safe logging library that provides f
   - Simple function-based API
   - No exposed implementation details
   - Header-only public interface
-  - All functions forward to LoggerImpl
+  - All functions forward to anonymous-namespace implementations
 
-### LoggerImpl (Internal Implementation)
+### Internal Implementation (Anonymous Namespace)
 - **File**: `src/logcoe.cpp` (anonymous namespace)
 - **Purpose**: Contains all logging logic and state management
-- **Design Pattern**: Singleton with static members
+- **Design**: Free functions with implicit internal linkage through namespace scope
 
 #### Thread Safety Manager
 ```cpp
-static std::mutex s_mutex;
+std::mutex g_mutex;
 ```
-- Ensures thread-safe access to all static members and operations
+- Ensures thread-safe access to all state variables and operations
 
 #### State Management
 ```cpp
-static LogLevel s_logLevel;
-static bool s_useFile;
-static bool s_useConsole;
-static std::string s_timeFormat;
+log_level   g_log_level;
+bool        g_use_file;
+bool        g_use_console;
+std::string g_time_format;
 ```
-- Maintains current logger configuration, Can be changed at runtime
+- Maintains current logger configuration, can be changed at runtime
 
 #### Output Stream Management
 ```cpp
-static std::string s_filename;
-static std::ofstream s_fileStream;
-static std::ostream* s_consoleStream;
+std::string     g_filename;
+std::ofstream   g_file_stream;
+std::ostream*   g_console_stream;
 ```
 - **File Output**: Direct file stream management with automatic opening/closing
 - **Console Output**: Configurable output stream (default: std::cout)
@@ -105,7 +105,7 @@ Generate timestamp
     ↓
 Format message with metadata
     ↓
-writeToOutputs()
+write_to_outputs()
     ↓
 Write to console (if enabled)
     ↓
@@ -118,7 +118,7 @@ Release mutex lock
 
 ### 3. Configuration Changes
 ```
-setLogLevel/setFileOutput/etc() called
+set_log_level/set_file_output/etc() called
     ↓
 Acquire mutex lock
     ↓
@@ -133,7 +133,7 @@ Release mutex lock
 
 ## Thread Safety Implementation
 
-- **Single Global Mutex**: `std::mutex s_mutex`
+- **Single Global Mutex**: `std::mutex g_mutex`
 - **Lock Scope**: Every public API call acquires lock for entire duration
 
 ### Thread Safety Guarantees
@@ -168,12 +168,12 @@ std::tm tm_now;
 
 ## Release Build Stripping
 
-Under `NDEBUG`, the entire anonymous-namespace `LoggerImpl` implementation is compiled out via
-`#ifndef NDEBUG`, so a Release build carries none of its code or static state. The public
+Under `NDEBUG`, the entire anonymous-namespace implementation is compiled out via
+`#ifndef NDEBUG`, so a Release build carries none of its code or state variables. The public
 `logcoe::` wrapper functions in `src/logcoe.cpp` switch to a separate `#ifdef NDEBUG` branch of
 no-op stubs, so every call site keeps compiling unchanged. Two stubs return a fixed value instead
-of an empty body, since there's no real state left to report: `isInitialized()` always returns
-`false`, and `getLogLevel()` always returns `LogLevel::NONE`. The guard is on the bare `NDEBUG`
+of an empty body, since there's no real state left to report: `is_initialized()` always returns
+`false`, and `get_log_level()` always returns `log_level::none`. The guard is on the bare `NDEBUG`
 macro, not a check for a "Release" build type specifically, so `RelWithDebInfo` and `MinSizeRel`
 trigger the same stripping since CMake defines `NDEBUG` for them too.
 
@@ -193,11 +193,11 @@ trigger the same stripping since CMake defines `NDEBUG` for them too.
 
 ### Level Hierarchy
 ```
-DEBUG (0) < INFO (1) < WARNING (2) < ERROR (3) < NONE (4)
+debug (0) < info (1) < warning (2) < error (3) < none (4)
 ```
 
 ```cpp
-if (static_cast<int>(level) < static_cast<int>(s_logLevel))
+if (static_cast<int>(level) < static_cast<int>(g_log_level))
     return;
 ```
 
@@ -212,7 +212,7 @@ if (static_cast<int>(level) < static_cast<int>(s_logLevel))
 ```
 
 - **Timestamp**: Configurable format using strftime
-- **Level**: String representation of LogLevel enum
+- **Level**: String representation of log_level enum
 - **Source**: Optional component identifier
 - **Message**: User-provided content
 

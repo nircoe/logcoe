@@ -1,6 +1,6 @@
 # Automatically copies required MinGW DLLs to target directory on Windows
 
-function(copy_mingw_dlls_to_target target_name)
+function(logcoe_copy_mingw_dlls_to_target target_name)
     if(WIN32 AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         message(STATUS "[logcoe] Setting up automatic MinGW DLL copying for ${target_name}")
         
@@ -34,13 +34,13 @@ function(copy_mingw_dlls_to_target target_name)
 endfunction()
 
 # Alternative function for multiple targets
-function(copy_mingw_dlls_to_targets)
+function(logcoe_copy_mingw_dlls_to_targets)
     foreach(target_name ${ARGN})
-        copy_mingw_dlls_to_target(${target_name})
+        logcoe_copy_mingw_dlls_to_target(${target_name})
     endforeach()
 endfunction()
 
-function(ignore_external_warnings target_name)
+function(logcoe_ignore_external_warnings target_name)
     if(TARGET ${target_name})
         get_target_property(INCLUDE_DIRS ${target_name} INTERFACE_INCLUDE_DIRECTORIES)
         if(INCLUDE_DIRS)
@@ -54,7 +54,7 @@ function(ignore_external_warnings target_name)
     endif()
 endfunction()
 
-function(enable_strict_warnings target_name)
+function(logcoe_enable_strict_warnings target_name)
     if(MSVC)
         target_compile_options(${target_name} PRIVATE /W4 /WX)
     else()

@@ -14,12 +14,12 @@ protected:
     void SetUp() override
     {
         testFilename = "test_logfile_" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) + ".log";
-        while(logcoe::isInitialized()) { logcoe::shutdown(); }
+        while(logcoe::is_initialized()) { logcoe::shutdown(); }
     }
 
     void TearDown() override
     {
-        while(logcoe::isInitialized()) { logcoe::shutdown(); }
+        while(logcoe::is_initialized()) { logcoe::shutdown(); }
         if (std::filesystem::exists(testFilename))
             std::filesystem::remove(testFilename);
     }
@@ -27,26 +27,26 @@ protected:
 
 TEST_F(LogcoeStripTest, InitializeAndStateQueries)
 {
-    logcoe::initialize(logcoe::LogLevel::INFO);
+    logcoe::initialize(logcoe::log_level::info);
 
     {
-        EXPECT_FALSE(logcoe::isInitialized());
+        EXPECT_FALSE(logcoe::is_initialized());
     }
 
     {
-        EXPECT_EQ(logcoe::getLogLevel(), logcoe::LogLevel::NONE);
+        EXPECT_EQ(logcoe::get_log_level(), logcoe::log_level::none);
     }
 
     {
-        logcoe::setLogLevel(logcoe::LogLevel::DEBUG);
-        EXPECT_EQ(logcoe::getLogLevel(), logcoe::LogLevel::NONE);
+        logcoe::set_log_level(logcoe::log_level::debug);
+        EXPECT_EQ(logcoe::get_log_level(), logcoe::log_level::none);
     }
 }
 
 TEST_F(LogcoeStripTest, ConsoleOutput)
 {
     logcoe::initialize();
-    logcoe::setConsoleOutput(testStream);
+    logcoe::set_console_output(testStream);
 
     {
         logcoe::debug("Debug message");
@@ -58,7 +58,7 @@ TEST_F(LogcoeStripTest, ConsoleOutput)
     }
 
     {
-        logcoe::disableConsoleOutput();
+        logcoe::disable_console_output();
         EXPECT_TRUE(testStream.str().empty());
     }
 }
@@ -68,7 +68,7 @@ TEST_F(LogcoeStripTest, FileOutput)
     logcoe::initialize();
 
     {
-        bool result = logcoe::setFileOutput(testFilename);
+        bool result = logcoe::set_file_output(testFilename);
         EXPECT_FALSE(result);
     }
 
@@ -77,7 +77,7 @@ TEST_F(LogcoeStripTest, FileOutput)
     }
 
     {
-        logcoe::disableFileOutput();
+        logcoe::disable_file_output();
         EXPECT_FALSE(std::filesystem::exists(testFilename));
     }
 }
@@ -87,11 +87,11 @@ TEST_F(LogcoeStripTest, TimeFormat)
     logcoe::initialize();
 
     {
-        EXPECT_NO_THROW(logcoe::setTimeFormat("bogus"));
+        EXPECT_NO_THROW(logcoe::set_time_format("bogus"));
     }
 
     {
-        EXPECT_NO_THROW(logcoe::setTimeFormat("%H:%M:%S"));
+        EXPECT_NO_THROW(logcoe::set_time_format("%H:%M:%S"));
     }
 }
 
@@ -108,7 +108,7 @@ TEST_F(LogcoeStripTest, Lifecycle)
     {
         logcoe::initialize();
         logcoe::shutdown();
-        logcoe::initialize(logcoe::LogLevel::DEBUG, "", true, true, testFilename);
+        logcoe::initialize(logcoe::log_level::debug, "", true, true, testFilename);
         logcoe::shutdown();
 
         EXPECT_FALSE(std::filesystem::exists(testFilename));

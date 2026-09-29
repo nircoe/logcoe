@@ -71,21 +71,21 @@ The CI runs the following checks:
 
 ### Code Style
 - Follow existing naming conventions:
-  - `camelCase` for functions and variables
-  - `PascalCase` for classes and enums
-  - `s_` prefix for static members
+  - `snake_case` for functions, variables, types, and enumerators
+  - `g_` prefix for anonymous-namespace variables (implicit internal linkage)
+  - Trailing underscore for parameters that would otherwise shadow another identifier in scope (e.g. a `flush` parameter is renamed to `flush_` to avoid shadowing the `flush()` function)
 - Keep lines under 120 characters
 - Add comments for complex logic
 - Use `const` and `constexpr` where appropriate
 
 ### Example Code Style
 ```cpp
-namespace logcoe 
+namespace
 {
-    void setLogLevel(LogLevel level) 
+    void set_log_level(log_level level) 
     {
-        std::lock_guard<std::mutex> lock(s_mutex);
-        s_logLevel = level;
+        std::lock_guard<std::mutex> lock(g_mutex);
+        g_log_level = level;
     }
 }
 ```
@@ -131,7 +131,7 @@ When adding features:
    - Maintain backward compatibility
    - Add documentation comments
 
-2. **Implement in LoggerImpl**:
+2. **Implement in the anonymous namespace**:
    - Add to `src/logcoe.cpp`
    - Ensure thread safety with proper locking
    - Handle error cases gracefully
@@ -150,7 +150,7 @@ When adding features:
 
 When modifying logcoe:
 
-1. **Always Use Mutex**: Every function that accesses static state must lock `s_mutex`
+1. **Always Use Mutex**: Every function that accesses static state must lock `g_mutex`
 2. **Minimize Lock Duration**: Perform I/O operations efficiently under lock
 3. **Avoid Nested Locks**: Current design uses single mutex to prevent deadlocks
 4. **Test Concurrency**: Add thread safety tests for new features

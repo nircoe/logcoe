@@ -7,70 +7,28 @@
 #include <fstream>
 #include <filesystem>
 
-using logcoe::LogLevel;
+using logcoe::log_level;
 
 #ifndef NDEBUG
 namespace
 {
-    class LoggerImpl
+    unsigned int  g_init_counter = 0;
+    log_level     g_log_level = log_level::info;
+    std::string   g_default_source = "";
+    std::mutex    g_mutex;
+    std::string   g_filename = "logcoe.log";
+    std::ofstream g_file_stream;
+    std::ostream *g_console_stream = &std::cout;
+    bool          g_use_file = false;
+    bool          g_use_console = true;
+    std::string   g_time_format = "%d/%m/%Y__%H:%M:%S";
+
+    namespace internal
     {
-        static unsigned int s_initCounter;
-        static LogLevel s_logLevel;
-        static std::string s_defaultSource;
-        static std::mutex s_mutex;
-        static std::string s_filename;
-        static std::ofstream s_fileStream;
-        static std::ostream *s_consoleStream;
-        static bool s_useFile;
-        static bool s_useConsole;
-        static std::string s_timeFormat;
 
-        static std::string getCurrentTimestamp();
-        static std::string getLogLevelAsString(LogLevel level);
-        static void writeToOutputs(const std::string &formattedMessage,
-                                   LogLevel level = LogLevel::INFO,
-                                   bool flush = true);
-        static void log(LogLevel level, const std::string &message, const std::string &source, bool flush);
-
-    public:
-        static void initialize(LogLevel level = LogLevel::INFO,
-                               const std::string &defaultSource = "",
-                               bool enableConsole = true,
-                               bool enableFile = false,
-                               const std::string &filename = "logcoe.log");
-        static void shutdown();
-
-        static void setLogLevel(LogLevel level);
-        static void setConsoleOutput(std::ostream &stream);
-        static bool setFileOutput(const std::string &filename);
-        static void disableConsoleOutput();
-        static void disableFileOutput();
-        static void setTimeFormat(const std::string &format);
-
-        static bool isInitialized();
-        static LogLevel getLogLevel();
-
-        static void debug(const std::string &message, const std::string &source = "", bool flush = true);
-        static void info(const std::string &message, const std::string &source = "", bool flush = true);
-        static void warning(const std::string &message, const std::string &source = "", bool flush = true);
-        static void error(const std::string &message, const std::string &source = "", bool flush = true);
-        static void flush();
-    };
-
-    unsigned int LoggerImpl::s_initCounter = 0;
-    LogLevel LoggerImpl::s_logLevel = LogLevel::INFO;
-    std::string LoggerImpl::s_defaultSource = "";
-    std::mutex LoggerImpl::s_mutex;
-    std::string LoggerImpl::s_filename = "logcoe.log";
-    std::ofstream LoggerImpl::s_fileStream;
-    std::ostream *LoggerImpl::s_consoleStream = &std::cout;
-    bool LoggerImpl::s_useFile = false;
-    bool LoggerImpl::s_useConsole = true;
-    std::string LoggerImpl::s_timeFormat = "%d/%m/%Y__%H:%M:%S";
-
-    std::string LoggerImpl::getCurrentTimestamp()
+    std::string get_current_timestamp()
     {
-        if(s_initCounter == 0) return "";
+        if(g_init_counter == 0) return "";
 
         auto now = std::chrono::system_clock::now();
         std::time_t time_t_now = std::chrono::system_clock::to_time_t(now);
@@ -83,203 +41,225 @@ namespace
 #endif
 
         char buffer[256];
-        std::strftime(buffer, sizeof(buffer), s_timeFormat.c_str(), &tm_now);
+        std::strftime(buffer, sizeof(buffer), g_time_format.c_str(), &tm_now);
 
         return std::string(buffer);
     }
 
-    std::string LoggerImpl::getLogLevelAsString(LogLevel level)
+    std::string get_log_level_as_string(log_level level)
     {
-        if(s_initCounter == 0) return "";
+        if(g_init_counter == 0) return "";
 
         switch (level)
         {
-        case LogLevel::DEBUG:
+        case log_level::debug:
             return "DEBUG";
-        case LogLevel::INFO:
+        case log_level::info:
             return "INFO";
-        case LogLevel::WARNING:
+        case log_level::warning:
             return "WARNING";
-        case LogLevel::ERROR:
+        case log_level::error:
             return "ERROR";
         default:
             return "NONE";
         }
     }
 
-    void LoggerImpl::writeToOutputs(const std::string &formattedMessage, LogLevel level, bool flush)
+    void write_to_outputs(const std::string &formatted_message, log_level level = log_level::info, bool flush_ = true)
     {
-        if (s_initCounter == 0 || static_cast<int>(level) < static_cast<int>(s_logLevel))
+        if (g_init_counter == 0 || static_cast<int>(level) < static_cast<int>(g_log_level))
             return;
 
-        if (s_useConsole && s_consoleStream)
+        if (g_use_console && g_console_stream)
         {
-            *s_consoleStream << formattedMessage << std::endl;
-            if (flush)
-                s_consoleStream->flush();
+            *g_console_stream << formatted_message << std::endl;
+            if (flush_)
+                g_console_stream->flush();
         }
 
-        if (s_useFile)
+        if (g_use_file)
         {
-            s_fileStream << formattedMessage << std::endl;
-            if (flush)
-                s_fileStream.flush();
+            g_file_stream << formatted_message << std::endl;
+            if (flush_)
+                g_file_stream.flush();
         }
     }
 
-    void LoggerImpl::log(LogLevel level, const std::string &message, const std::string &source, bool flush)
+    void flush_streams()
     {
-        std::lock_guard<std::mutex> lock(s_mutex);
-        if(s_initCounter == 0) return;
-
-        std::stringstream formattedMessage;
-        formattedMessage << "[" << getCurrentTimestamp() << "] ";
-        formattedMessage << "[" << getLogLevelAsString(level) << "]";
-        if (!source.empty())
-            formattedMessage << " [" << source << "]";
-        formattedMessage << ": " << message;
-
-        writeToOutputs(formattedMessage.str(), level, flush);
+        if (g_use_console && g_console_stream)
+            g_console_stream->flush();
+        if (g_use_file && g_file_stream.is_open())
+            g_file_stream.flush();
     }
 
-    void LoggerImpl::initialize(LogLevel level, const std::string &defaultSource, bool enableConsole, bool enableFile, const std::string &filename)
+    void log(log_level level, const std::string &message, const std::string &source, bool flush_)
     {
-        std::lock_guard<std::mutex> lock(s_mutex);
-        if(s_initCounter++ > 0)
-            return writeToOutputs("[logcoe] Already initialized, ignoring new configurations");
+        std::lock_guard<std::mutex> lock(g_mutex);
+        if(g_init_counter == 0) return;
 
-        s_logLevel = level;
-        s_defaultSource = defaultSource;
-        s_useConsole = enableConsole;
-        if (s_useConsole && !s_consoleStream)
-            s_consoleStream = &std::cout;
-        s_useFile = enableFile;
+        const std::string &resolved_source = source.empty() ? g_default_source : source;
 
-        if (filename != s_filename)
-            s_filename = filename;
+        std::stringstream formatted_message;
+        formatted_message << "[" << get_current_timestamp() << "] ";
+        formatted_message << "[" << get_log_level_as_string(level) << "]";
+        if (!resolved_source.empty())
+            formatted_message << " [" << resolved_source << "]";
+        formatted_message << ": " << message;
 
-        if (s_filename == "logcoe.log")
-            s_filename = "logcoe_" + getCurrentTimestamp() + ".log";
+        write_to_outputs(formatted_message.str(), level, flush_);
+    }
 
-        if (s_useFile && !filename.empty())
+    void initialize(log_level level,
+                    const std::string &default_source,
+                    bool enable_console,
+                    bool enable_file,
+                    const std::string &filename)
+    {
+        std::lock_guard<std::mutex> lock(g_mutex);
+        if(g_init_counter++ > 0)
+            return write_to_outputs("[logcoe] Already initialized, ignoring new configurations");
+
+        g_log_level = level;
+        g_default_source = default_source;
+        g_use_console = enable_console;
+        if (g_use_console && !g_console_stream)
+            g_console_stream = &std::cout;
+        g_use_file = enable_file;
+
+        if (filename != g_filename)
+            g_filename = filename;
+
+        if (g_filename == "logcoe.log")
+            g_filename = "logcoe_" + get_current_timestamp() + ".log";
+
+        if (g_use_file && !filename.empty())
         {
-            if (s_fileStream.is_open())
-                s_fileStream.close();
+            if (g_file_stream.is_open())
+                g_file_stream.close();
 
-            std::filesystem::path filepath(s_filename);
+            std::filesystem::path filepath(g_filename);
 
             if (filepath.has_parent_path() && !std::filesystem::exists(filepath.parent_path()))
                 std::filesystem::create_directories(filepath.parent_path());
-            
+
             if (std::filesystem::exists(filepath) && std::filesystem::is_regular_file(filepath))
                 std::filesystem::remove(filepath);
 
-            s_fileStream.open(s_filename);
-            if (!s_fileStream.is_open())
+            g_file_stream.open(g_filename);
+            if (!g_file_stream.is_open())
             {
-                writeToOutputs("[logcoe] ERROR: Failed to open log file: " + s_filename);
-                s_useFile = false;
+                write_to_outputs("[logcoe] ERROR: Failed to open log file: " + g_filename);
+                g_use_file = false;
             }
         }
 
-        writeToOutputs("[logcoe] Initialized, log level: " + getLogLevelAsString(s_logLevel));
+        write_to_outputs("[logcoe] Initialized, log level: " + get_log_level_as_string(g_log_level));
     }
 
-    void LoggerImpl::shutdown()
+    void flush()
     {
-        std::lock_guard<std::mutex> lock(s_mutex);
-        if (--s_initCounter > 0) return;
-
-        std::string shutdownMessage = "[logcoe] shutting down";
-        writeToOutputs(shutdownMessage);
-
-        flush();
-        if (s_fileStream.is_open())
-            s_fileStream.close();
-
-        s_consoleStream = nullptr;
-        s_useConsole = false;
-        s_useFile = false;
-        s_logLevel = LogLevel::NONE;
-        s_filename = "logcoe.log";
-        s_initCounter = 0;
+        std::lock_guard<std::mutex> lock(g_mutex);
+        if (g_init_counter == 0) return;
+        flush_streams();
     }
 
-    void LoggerImpl::setLogLevel(LogLevel level)
+    void shutdown()
     {
-        std::lock_guard<std::mutex> lock(s_mutex);
-        if(s_initCounter == 0) return;
+        std::lock_guard<std::mutex> lock(g_mutex);
+        if (g_init_counter == 0) return;
+        if (--g_init_counter > 0) return;
 
-        s_logLevel = level;
+        std::string shutdown_message = "[logcoe] shutting down";
+        write_to_outputs(shutdown_message);
+
+        flush_streams();
+        if (g_file_stream.is_open())
+            g_file_stream.close();
+
+        g_console_stream = nullptr;
+        g_use_console = false;
+        g_use_file = false;
+        g_log_level = log_level::none;
+        g_filename = "logcoe.log";
+        g_init_counter = 0;
     }
 
-    void LoggerImpl::setConsoleOutput(std::ostream &stream)
+    void set_log_level(log_level level)
     {
-        std::lock_guard<std::mutex> lock(s_mutex);
-        if(s_initCounter == 0) return;
+        std::lock_guard<std::mutex> lock(g_mutex);
+        if(g_init_counter == 0) return;
 
-        if (s_useConsole && s_consoleStream)
-            s_consoleStream->flush();
-        s_consoleStream = &stream;
-        s_useConsole = true;
+        g_log_level = level;
     }
 
-    bool LoggerImpl::setFileOutput(const std::string &filename)
+    void set_console_output(std::ostream &stream)
     {
-        std::lock_guard<std::mutex> lock(s_mutex);
-        if(s_initCounter == 0) return false;
+        std::lock_guard<std::mutex> lock(g_mutex);
+        if(g_init_counter == 0) return;
 
-        if (s_fileStream.is_open())
+        if (g_use_console && g_console_stream)
+            g_console_stream->flush();
+        g_console_stream = &stream;
+        g_use_console = true;
+    }
+
+    bool set_file_output(const std::string &filename)
+    {
+        std::lock_guard<std::mutex> lock(g_mutex);
+        if(g_init_counter == 0) return false;
+
+        if (g_file_stream.is_open())
         {
-            if (s_useFile)
-                s_fileStream.flush();
-            s_fileStream.close();
+            if (g_use_file)
+                g_file_stream.flush();
+            g_file_stream.close();
         }
 
-        s_filename = filename.empty() ? "logcoe_" + getCurrentTimestamp() + ".log" : filename;
-        s_useFile = true;
+        g_filename = filename.empty() ? "logcoe_" + get_current_timestamp() + ".log" : filename;
+        g_use_file = true;
 
-        s_fileStream.open(s_filename);
-        if (!s_fileStream.is_open())
+        g_file_stream.open(g_filename);
+        if (!g_file_stream.is_open())
         {
-            writeToOutputs("[logcoe] ERROR: Failed to open log file: " + s_filename);
-            s_useFile = false;
+            write_to_outputs("[logcoe] ERROR: Failed to open log file: " + g_filename);
+            g_use_file = false;
         }
 
-        return s_useFile;
+        return g_use_file;
     }
 
-    void LoggerImpl::disableConsoleOutput()
+    void disable_console_output()
     {
-        std::lock_guard<std::mutex> lock(s_mutex);
-        if(s_initCounter == 0) return;
+        std::lock_guard<std::mutex> lock(g_mutex);
+        if(g_init_counter == 0) return;
 
-        if (s_useConsole && s_consoleStream)
-            s_consoleStream->flush();
-        s_consoleStream = nullptr;
-        s_useConsole = false;
+        if (g_use_console && g_console_stream)
+            g_console_stream->flush();
+        g_console_stream = nullptr;
+        g_use_console = false;
     }
 
-    void LoggerImpl::disableFileOutput()
+    void disable_file_output()
     {
-        std::lock_guard<std::mutex> lock(s_mutex);
-        if(s_initCounter == 0) return;
+        std::lock_guard<std::mutex> lock(g_mutex);
+        if(g_init_counter == 0) return;
 
-        if (s_fileStream.is_open())
+        if (g_file_stream.is_open())
         {
-            if (s_useFile)
-                s_fileStream.flush();
-            s_fileStream.close();
+            if (g_use_file)
+                g_file_stream.flush();
+            g_file_stream.close();
         }
 
-        s_filename = "logcoe.log";
-        s_useFile = false;
+        g_filename = "logcoe.log";
+        g_use_file = false;
     }
 
-    void LoggerImpl::setTimeFormat(const std::string &format)
+    void set_time_format(const std::string &format)
     {
-        std::lock_guard<std::mutex> lock(s_mutex);
-        if(s_initCounter == 0) return;
+        std::lock_guard<std::mutex> lock(g_mutex);
+        if(g_init_counter == 0) return;
 
         try
         {
@@ -296,81 +276,74 @@ namespace
             std::size_t result = std::strftime(buffer, sizeof(buffer), format.c_str(), &tm_now);
             if (result == 0)
             {
-                writeToOutputs("[logcoe] ERROR: Invalid time format provided: \"" + format + "\". Keeping the current format");
+                write_to_outputs("[logcoe] ERROR: Invalid time format provided: \"" + format + "\". Keeping the current format");
                 return;
             }
 
-            s_timeFormat = format;
+            g_time_format = format;
         }
         catch (const std::exception &e)
         {
             std::stringstream message;
             message << "[logcoe] ERROR: Exception while validating time format: " << e.what();
-            writeToOutputs(message.str());
+            write_to_outputs(message.str());
         }
     }
 
-    bool LoggerImpl::isInitialized()
+    bool is_initialized()
     {
-        std::lock_guard<std::mutex> lock(s_mutex);
+        std::lock_guard<std::mutex> lock(g_mutex);
 
-        return s_initCounter > 0;
+        return g_init_counter > 0;
     }
 
-    LogLevel LoggerImpl::getLogLevel()
+    log_level get_log_level()
     {
-        std::lock_guard<std::mutex> lock(s_mutex);
+        std::lock_guard<std::mutex> lock(g_mutex);
 
-        return s_logLevel;
+        return g_log_level;
     }
 
-    void LoggerImpl::debug(const std::string &message, const std::string &source, bool flush)
+    void debug(const std::string &message, const std::string &source, bool flush_)
     {
-        log(LogLevel::DEBUG, message, source.empty() ? s_defaultSource : source, flush);
+        log(log_level::debug, message, source, flush_);
     }
 
-    void LoggerImpl::info(const std::string &message, const std::string &source, bool flush)
+    void info(const std::string &message, const std::string &source, bool flush_)
     {
-        log(LogLevel::INFO, message, source.empty() ? s_defaultSource : source, flush);
+        log(log_level::info, message, source, flush_);
     }
 
-    void LoggerImpl::warning(const std::string &message, const std::string &source, bool flush)
+    void warning(const std::string &message, const std::string &source, bool flush_)
     {
-        log(LogLevel::WARNING, message, source.empty() ? s_defaultSource : source, flush);
+        log(log_level::warning, message, source, flush_);
     }
 
-    void LoggerImpl::error(const std::string &message, const std::string &source, bool flush)
+    void error(const std::string &message, const std::string &source, bool flush_)
     {
-        log(LogLevel::ERROR, message, source.empty() ? s_defaultSource : source, flush);
+        log(log_level::error, message, source, flush_);
     }
 
-    void LoggerImpl::flush()
-    {
-        if(s_initCounter == 0) return;
-        if (s_useConsole && s_consoleStream)
-            s_consoleStream->flush();
-        if (s_useFile && s_fileStream.is_open())
-            s_fileStream.flush();
-    }
+    } // namespace internal
 }
 #endif
 
 namespace logcoe
 {
 #ifdef NDEBUG
-    void initialize(LogLevel, const std::string &, bool, bool, const std::string &) { }
+    void initialize(log_level, const std::string &, bool, bool, const std::string &) { }
 
     void shutdown() { }
 
-    void setLogLevel(LogLevel) { }
-    void setConsoleOutput(std::ostream &) { }
-    bool setFileOutput(const std::string &) { return false; }
-    void disableConsoleOutput() { }
-    void disableFileOutput() { }
-    void setTimeFormat(const std::string &) { }
+    void set_log_level(log_level) { }
+    void set_console_output(std::ostream &) { }
+    bool set_file_output(const std::string &) { return false; }
+    void disable_console_output() { }
+    void disable_file_output() { }
+    void set_time_format(const std::string &) { }
 
-    bool isInitialized() { return false; }
-    LogLevel getLogLevel() { return LogLevel::NONE; }
+    bool is_initialized() { return false; }
+    log_level get_log_level() { return log_level::none; }
 
     void debug(const std::string &, const std::string &, bool) { }
     void info(const std::string &, const std::string &, bool) { }
@@ -378,26 +351,26 @@ namespace logcoe
     void error(const std::string &, const std::string &, bool) { }
     void flush() { }
 #else
-    void initialize(LogLevel level, const std::string &defaultSource, bool enableConsole,
-                    bool enableFile, const std::string &filename) { LoggerImpl::initialize(level, defaultSource, enableConsole, enableFile, filename); }
+    void initialize(log_level level, const std::string &default_source, bool enable_console,
+                    bool enable_file, const std::string &filename) { internal::initialize(level, default_source, enable_console, enable_file, filename); }
 
-    void shutdown() { LoggerImpl::shutdown(); }
+    void shutdown() { internal::shutdown(); }
 
-    void setLogLevel(LogLevel level) { LoggerImpl::setLogLevel(level); }
-    void setConsoleOutput(std::ostream &stream) { LoggerImpl::setConsoleOutput(stream); }
-    bool setFileOutput(const std::string &filename) { return LoggerImpl::setFileOutput(filename); }
-    void disableConsoleOutput() { LoggerImpl::disableConsoleOutput(); }
-    void disableFileOutput() { LoggerImpl::disableFileOutput(); }
-    void setTimeFormat(const std::string &format) { LoggerImpl::setTimeFormat(format); }
+    void set_log_level(log_level level) { internal::set_log_level(level); }
+    void set_console_output(std::ostream &stream) { internal::set_console_output(stream); }
+    bool set_file_output(const std::string &filename) { return internal::set_file_output(filename); }
+    void disable_console_output() { internal::disable_console_output(); }
+    void disable_file_output() { internal::disable_file_output(); }
+    void set_time_format(const std::string &format) { internal::set_time_format(format); }
 
-    bool isInitialized() { return LoggerImpl::isInitialized(); }
-    LogLevel getLogLevel() { return LoggerImpl::getLogLevel(); }
+    bool is_initialized() { return internal::is_initialized(); }
+    log_level get_log_level() { return internal::get_log_level(); }
 
-    void debug(const std::string &message, const std::string &source, bool flush) { LoggerImpl::debug(message, source, flush); }
-    void info(const std::string &message, const std::string &source, bool flush) { LoggerImpl::info(message, source, flush); }
-    void warning(const std::string &message, const std::string &source, bool flush) { LoggerImpl::warning(message, source, flush); }
-    void error(const std::string &message, const std::string &source, bool flush) { LoggerImpl::error(message, source, flush); }
-    void flush() { LoggerImpl::flush(); }
+    void debug(const std::string &message, const std::string &source, bool flush_) { internal::debug(message, source, flush_); }
+    void info(const std::string &message, const std::string &source, bool flush_) { internal::info(message, source, flush_); }
+    void warning(const std::string &message, const std::string &source, bool flush_) { internal::warning(message, source, flush_); }
+    void error(const std::string &message, const std::string &source, bool flush_) { internal::error(message, source, flush_); }
+    void flush() { internal::flush(); }
 #endif
 
 } // namespace logcoe

@@ -47,7 +47,7 @@ target_link_libraries(your_target PRIVATE logcoe)
 int main() {
     // Initialize with INFO level, no default source (empty string), console enabled, file disabled
     // logs will be printed as [timestamp] [log_level]: <log_message>
-    logcoe::initialize(logcoe::LogLevel::INFO, std::string{}, true, false);
+    logcoe::initialize(logcoe::log_level::info, std::string{}, true, false);
     
     logcoe::info("Application started");
     logcoe::warning("This is a warning message");
@@ -67,10 +67,10 @@ int main() {
 int main() {
     // Enable both console and file output with DEBUG level and default source as logcoe
     // logs will be printed as [timestamp] [log_level] [logcoe]: <log_message>
-    logcoe::initialize(logcoe::LogLevel::DEBUG, "logcoe", true, true, "app.log");
+    logcoe::initialize(logcoe::log_level::debug, "logcoe", true, true, "app.log");
     
     // Customize time format
-    logcoe::setTimeFormat("%H:%M:%S");
+    logcoe::set_time_format("%H:%M:%S");
     
     // Log with source information
     logcoe::debug("Debugging network connection", "NetworkModule");
@@ -78,10 +78,10 @@ int main() {
     
     // Redirect console to custom stream
     std::ofstream customLog("custom.log");
-    logcoe::setConsoleOutput(customLog);
+    logcoe::set_console_output(customLog);
     
     // Change log level at runtime
-    logcoe::setLogLevel(logcoe::LogLevel::WARNING);
+    logcoe::set_log_level(logcoe::log_level::warning);
     
     logcoe::shutdown();
     return 0;
@@ -108,11 +108,11 @@ logcoe::initialize();
 
 // Full configuration
 logcoe::initialize(
-    logcoe::LogLevel::DEBUG,  // Log level
-    "logcoe",                 // Default source
-    true,                     // Enable console
-    true,                     // Enable file
-    "application.log"         // Filename
+    logcoe::log_level::debug,  // Log level
+    "logcoe",                  // Default source
+    true,                      // Enable console
+    true,                      // Enable file
+    "application.log"          // Filename
 );
 
 // shutdown
@@ -122,17 +122,17 @@ logcoe::shutdown();
 ### Configuration
 ```cpp
 // Runtime log level changes
-logcoe::setLogLevel(logcoe::LogLevel::WARNING);
-LogLevel current = logcoe::getLogLevel();
+logcoe::set_log_level(logcoe::log_level::warning);
+log_level current = logcoe::get_log_level();
 
 // Output configuration
-logcoe::setFileOutput("new_logfile.log");
-logcoe::disableFileOutput();
-logcoe::setConsoleOutput(std::cerr);
-logcoe::disableConsoleOutput();
+logcoe::set_file_output("new_logfile.log");
+logcoe::disable_file_output();
+logcoe::set_console_output(std::cerr);
+logcoe::disable_console_output();
 
 // Time formatting (strftime compatible)
-logcoe::setTimeFormat("%Y-%m-%d %H:%M:%S");
+logcoe::set_time_format("%Y-%m-%d %H:%M:%S");
 ```
 
 ### Logging
@@ -155,11 +155,11 @@ logcoe::flush();  // Flush all pending messages
 
 | Level | Value | Description |
 |-------|-------|-------------|
-| `DEBUG` | 0 | Detailed diagnostic information |
-| `INFO` | 1 | General application information |
-| `WARNING` | 2 | Warning conditions that should be noted |
-| `ERROR` | 3 | Error conditions that affect functionality |
-| `NONE` | 4 | Disable all logging |
+| `debug` | 0 | Detailed diagnostic information |
+| `info` | 1 | General application information |
+| `warning` | 2 | Warning conditions that should be noted |
+| `error` | 3 | Error conditions that affect functionality |
+| `none` | 4 | Disable all logging |
 
 ## Thread Safety
 
@@ -176,7 +176,7 @@ void worker_thread(int id) {
 }
 
 int main() {
-    logcoe::initialize(logcoe::LogLevel::INFO, std::string{}, false, true, "concurrent.log");
+    logcoe::initialize(logcoe::log_level::info, std::string{}, false, true, "concurrent.log");
     
     std::vector<std::thread> workers;
     for (int i = 0; i < 10; ++i) {
@@ -211,9 +211,9 @@ time. Every call site keeps working with zero code changes, but none of the logg
 or file I/O gets compiled in:
 
 - `initialize`, `debug`/`info`/`warning`/`error`, `flush`, `shutdown`, and the setters do nothing.
-- `isInitialized()` returns `false`.
-- `getLogLevel()` returns `LogLevel::NONE`.
-- `setFileOutput(...)` returns `false` and never creates a file.
+- `is_initialized()` returns `false`.
+- `get_log_level()` returns `log_level::none`.
+- `set_file_output(...)` returns `false` and never creates a file.
 
 No opt-in macro or CMake option needed, it's automatic whenever `NDEBUG` is defined. That includes
 `RelWithDebInfo` and `MinSizeRel`, since CMake defines `NDEBUG` for those build types too, not just
