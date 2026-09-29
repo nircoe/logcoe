@@ -23,6 +23,9 @@ namespace
     bool          g_use_console = true;
     std::string   g_time_format = "%d/%m/%Y__%H:%M:%S";
 
+    namespace internal
+    {
+
     std::string get_current_timestamp()
     {
         if(g_init_counter == 0) return "";
@@ -311,6 +314,8 @@ namespace
     {
         log(log_level::error, message, source.empty() ? g_default_source : source, flush_);
     }
+
+    } // namespace internal
 }
 #endif
 
@@ -338,25 +343,25 @@ namespace logcoe
     void flush() { }
 #else
     void initialize(log_level level, const std::string &default_source, bool enable_console,
-                    bool enable_file, const std::string &filename) { ::initialize(level, default_source, enable_console, enable_file, filename); }
+                    bool enable_file, const std::string &filename) { internal::initialize(level, default_source, enable_console, enable_file, filename); }
 
-    void shutdown() { ::shutdown(); }
+    void shutdown() { internal::shutdown(); }
 
-    void set_log_level(log_level level) { ::set_log_level(level); }
-    void set_console_output(std::ostream &stream) { ::set_console_output(stream); }
-    bool set_file_output(const std::string &filename) { return ::set_file_output(filename); }
-    void disable_console_output() { ::disable_console_output(); }
-    void disable_file_output() { ::disable_file_output(); }
-    void set_time_format(const std::string &format) { ::set_time_format(format); }
+    void set_log_level(log_level level) { internal::set_log_level(level); }
+    void set_console_output(std::ostream &stream) { internal::set_console_output(stream); }
+    bool set_file_output(const std::string &filename) { return internal::set_file_output(filename); }
+    void disable_console_output() { internal::disable_console_output(); }
+    void disable_file_output() { internal::disable_file_output(); }
+    void set_time_format(const std::string &format) { internal::set_time_format(format); }
 
-    bool is_initialized() { return ::is_initialized(); }
-    log_level get_log_level() { return ::get_log_level(); }
+    bool is_initialized() { return internal::is_initialized(); }
+    log_level get_log_level() { return internal::get_log_level(); }
 
-    void debug(const std::string &message, const std::string &source, bool flush_) { ::debug(message, source, flush_); }
-    void info(const std::string &message, const std::string &source, bool flush_) { ::info(message, source, flush_); }
-    void warning(const std::string &message, const std::string &source, bool flush_) { ::warning(message, source, flush_); }
-    void error(const std::string &message, const std::string &source, bool flush_) { ::error(message, source, flush_); }
-    void flush() { ::flush(); }
+    void debug(const std::string &message, const std::string &source, bool flush_) { internal::debug(message, source, flush_); }
+    void info(const std::string &message, const std::string &source, bool flush_) { internal::info(message, source, flush_); }
+    void warning(const std::string &message, const std::string &source, bool flush_) { internal::warning(message, source, flush_); }
+    void error(const std::string &message, const std::string &source, bool flush_) { internal::error(message, source, flush_); }
+    void flush() { internal::flush(); }
 #endif
 
 } // namespace logcoe
