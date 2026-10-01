@@ -140,7 +140,7 @@ TEST_F(LogcoeTest, FileOutput)
 {
     logcoe::initialize();
 
-    EXPECT_TRUE(logcoe::set_file_output(testFilename));
+    EXPECT_TRUE(logcoe::set_file_output(testFilename).has_value());
 
     logcoe::info("File test message");
 
@@ -185,7 +185,7 @@ TEST_F(LogcoeTest, TimeFormat)
     logcoe::initialize();
     logcoe::set_console_output(testStream);
 
-    logcoe::set_time_format("%H:%M:%S");
+    (void)logcoe::set_time_format("%H:%M:%S");
 
     logcoe::info("Custom time format");
 
