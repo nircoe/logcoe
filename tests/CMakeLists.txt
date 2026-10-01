@@ -14,7 +14,7 @@ endif()
 
 logcoe_ignore_external_warnings(testcoe)
 
-add_executable(logcoe_tests main.cpp logcoe_test.cpp logcoe_thread_test.cpp)
+add_executable(logcoe_tests main.cpp logcoe_test.cpp logcoe_thread_test.cpp logcoe_error_handling_test.cpp)
 
 target_link_libraries(logcoe_tests
     PRIVATE
