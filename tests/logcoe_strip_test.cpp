@@ -68,8 +68,9 @@ TEST_F(LogcoeStripTest, FileOutput)
     logcoe::initialize();
 
     {
-        bool result = logcoe::set_file_output(testFilename);
-        EXPECT_FALSE(result);
+        auto result = logcoe::set_file_output(testFilename);
+        EXPECT_FALSE(result.has_value());
+        EXPECT_EQ(result.error(), logcoe::error_reason::file_open_failure);
     }
 
     {
@@ -87,11 +88,13 @@ TEST_F(LogcoeStripTest, TimeFormat)
     logcoe::initialize();
 
     {
-        EXPECT_NO_THROW(logcoe::set_time_format("bogus"));
+        auto result = logcoe::set_time_format("bogus");
+        EXPECT_TRUE(result.has_value());
     }
 
     {
-        EXPECT_NO_THROW(logcoe::set_time_format("%H:%M:%S"));
+        auto result = logcoe::set_time_format("%H:%M:%S");
+        EXPECT_TRUE(result.has_value());
     }
 }
 

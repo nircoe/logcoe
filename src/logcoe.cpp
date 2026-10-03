@@ -204,10 +204,10 @@ namespace
         g_use_console = true;
     }
 
-    bool set_file_output(const std::string &filename)
+    std::expected<void, logcoe::error_reason> set_file_output(const std::string &filename)
     {
         std::lock_guard<std::mutex> lock(g_mutex);
-        if(g_init_counter == 0) return false;
+        if (g_init_counter == 0) return {};
 
         if (g_file_stream.is_open())
         {
@@ -224,9 +224,10 @@ namespace
         {
             write_to_outputs("[logcoe] ERROR: Failed to open log file: " + g_filename);
             g_use_file = false;
+            return std::unexpected(logcoe::error_reason::file_open_failure);
         }
 
-        return g_use_file;
+        return {};
     }
 
     void disable_console_output()
@@ -256,10 +257,10 @@ namespace
         g_use_file = false;
     }
 
-    void set_time_format(const std::string &format)
+    std::expected<void, logcoe::error_reason> set_time_format(const std::string &format)
     {
         std::lock_guard<std::mutex> lock(g_mutex);
-        if(g_init_counter == 0) return;
+        if (g_init_counter == 0) return {};
 
         try
         {
@@ -277,7 +278,7 @@ namespace
             if (result == 0)
             {
                 write_to_outputs("[logcoe] ERROR: Invalid time format provided: \"" + format + "\". Keeping the current format");
-                return;
+                return std::unexpected(logcoe::error_reason::invalid_time_format);
             }
 
             g_time_format = format;
@@ -287,7 +288,10 @@ namespace
             std::stringstream message;
             message << "[logcoe] ERROR: Exception while validating time format: " << e.what();
             write_to_outputs(message.str());
+            return std::unexpected(logcoe::error_reason::invalid_time_format);
         }
+
+        return {};
     }
 
     bool is_initialized()
@@ -337,10 +341,13 @@ namespace logcoe
 
     void set_log_level(log_level) { }
     void set_console_output(std::ostream &) { }
-    bool set_file_output(const std::string &) { return false; }
+    std::expected<void, error_reason> set_file_output(const std::string &)
+    {
+        return std::unexpected(error_reason::file_open_failure);
+    }
     void disable_console_output() { }
     void disable_file_output() { }
-    void set_time_format(const std::string &) { }
+    std::expected<void, error_reason> set_time_format(const std::string &) { return {}; }
 
     bool is_initialized() { return false; }
     log_level get_log_level() { return log_level::none; }
@@ -358,10 +365,16 @@ namespace logcoe
 
     void set_log_level(log_level level) { internal::set_log_level(level); }
     void set_console_output(std::ostream &stream) { internal::set_console_output(stream); }
-    bool set_file_output(const std::string &filename) { return internal::set_file_output(filename); }
+    std::expected<void, error_reason> set_file_output(const std::string &filename)
+    {
+        return internal::set_file_output(filename);
+    }
     void disable_console_output() { internal::disable_console_output(); }
     void disable_file_output() { internal::disable_file_output(); }
-    void set_time_format(const std::string &format) { internal::set_time_format(format); }
+    std::expected<void, error_reason> set_time_format(const std::string &format)
+    {
+        return internal::set_time_format(format);
+    }
 
     bool is_initialized() { return internal::is_initialized(); }
     log_level get_log_level() { return internal::get_log_level(); }

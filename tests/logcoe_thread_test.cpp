@@ -249,9 +249,9 @@ TEST_F(LogcoeThreadTest, ConcurrentOutputConfigChange)
         
         for (int i = 0; i < 5; i++) 
         {
-            logcoe::set_file_output(testFilename);
+            [[maybe_unused]] const auto result = logcoe::set_file_output(testFilename);
             std::this_thread::sleep_for(std::chrono::milliseconds(20));
-            
+
             logcoe::disable_file_output();
             std::this_thread::sleep_for(std::chrono::milliseconds(20));
             
