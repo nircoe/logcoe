@@ -207,7 +207,7 @@ namespace
     std::expected<void, logcoe::error_reason> set_file_output(const std::string &filename)
     {
         std::lock_guard<std::mutex> lock(g_mutex);
-        if(g_init_counter == 0) return {};
+        if (g_init_counter == 0) return {};
 
         if (g_file_stream.is_open())
         {
@@ -260,7 +260,7 @@ namespace
     std::expected<void, logcoe::error_reason> set_time_format(const std::string &format)
     {
         std::lock_guard<std::mutex> lock(g_mutex);
-        if(g_init_counter == 0) return {};
+        if (g_init_counter == 0) return {};
 
         try
         {
@@ -341,7 +341,10 @@ namespace logcoe
 
     void set_log_level(log_level) { }
     void set_console_output(std::ostream &) { }
-    std::expected<void, error_reason> set_file_output(const std::string &) { return std::unexpected(error_reason::file_open_failure); }
+    std::expected<void, error_reason> set_file_output(const std::string &)
+    {
+        return std::unexpected(error_reason::file_open_failure);
+    }
     void disable_console_output() { }
     void disable_file_output() { }
     std::expected<void, error_reason> set_time_format(const std::string &) { return {}; }
@@ -362,10 +365,16 @@ namespace logcoe
 
     void set_log_level(log_level level) { internal::set_log_level(level); }
     void set_console_output(std::ostream &stream) { internal::set_console_output(stream); }
-    std::expected<void, error_reason> set_file_output(const std::string &filename) { return internal::set_file_output(filename); }
+    std::expected<void, error_reason> set_file_output(const std::string &filename)
+    {
+        return internal::set_file_output(filename);
+    }
     void disable_console_output() { internal::disable_console_output(); }
     void disable_file_output() { internal::disable_file_output(); }
-    std::expected<void, error_reason> set_time_format(const std::string &format) { return internal::set_time_format(format); }
+    std::expected<void, error_reason> set_time_format(const std::string &format)
+    {
+        return internal::set_time_format(format);
+    }
 
     bool is_initialized() { return internal::is_initialized(); }
     log_level get_log_level() { return internal::get_log_level(); }

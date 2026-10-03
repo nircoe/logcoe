@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 #include <logcoe.hpp>
-#include <fstream>
-#include <sstream>
+
 #include <filesystem>
 #include <string>
 #include <chrono>
@@ -13,14 +12,15 @@ protected:
 
     void SetUp() override
     {
-        testFilename = "test_logfile_" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) + ".log";
+        testFilename = "test_logfile_" +
+                       std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) + ".log";
 
-        while(logcoe::is_initialized()) { logcoe::shutdown(); }
+        while (logcoe::is_initialized()) { logcoe::shutdown(); }
     }
 
     void TearDown() override
     {
-        while(logcoe::is_initialized()) { logcoe::shutdown(); }
+        while (logcoe::is_initialized()) { logcoe::shutdown(); }
 
         if (std::filesystem::exists(testFilename))
             std::filesystem::remove(testFilename);
@@ -41,7 +41,9 @@ TEST_F(LogcoeErrorHandlingTest, SetFileOutputFailure)
 {
     logcoe::initialize();
 
-    std::string badPath = "nonexistent_dir_" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) + "/" + testFilename;
+    std::string badPath = "nonexistent_dir_" +
+                          std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) + "/" +
+                          testFilename;
     auto result = logcoe::set_file_output(badPath);
 
     EXPECT_FALSE(result.has_value());

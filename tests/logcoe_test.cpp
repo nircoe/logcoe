@@ -185,7 +185,7 @@ TEST_F(LogcoeTest, TimeFormat)
     logcoe::initialize();
     logcoe::set_console_output(testStream);
 
-    (void)logcoe::set_time_format("%H:%M:%S");
+    [[maybe_unused]] const auto result = logcoe::set_time_format("%H:%M:%S");
 
     logcoe::info("Custom time format");
 
