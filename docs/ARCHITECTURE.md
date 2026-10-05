@@ -171,9 +171,10 @@ std::tm tm_now;
 Under `NDEBUG`, the entire anonymous-namespace implementation is compiled out via
 `#ifndef NDEBUG`, so a Release build carries none of its code or state variables. The public
 `logcoe::` wrapper functions in `src/logcoe.cpp` switch to a separate `#ifdef NDEBUG` branch of
-no-op stubs, so every call site keeps compiling unchanged. Two stubs return a fixed value instead
-of an empty body, since there's no real state left to report: `is_initialized()` always returns
-`false`, and `get_log_level()` always returns `log_level::none`. The guard is on the bare `NDEBUG`
+no-op stubs, so every call site keeps compiling unchanged. Four stubs return a fixed value instead of an
+empty body, since there's no real state left to report: `is_initialized()` returns `false`,
+`get_log_level()` returns `log_level::none`, `set_file_output()` returns `error_reason::file_open_failure`
+(no file is ever created), and `set_time_format()` returns success. The guard is on the bare `NDEBUG`
 macro, not a check for a "Release" build type specifically, so `RelWithDebInfo` and `MinSizeRel`
 trigger the same stripping since CMake defines `NDEBUG` for them too.
 
@@ -219,9 +220,12 @@ if (static_cast<int>(level) < static_cast<int>(g_log_level))
 ## Error Handling
 
 ### Stream Failures
-- **File Open Errors**: Logged to console, file output disabled
+- **File Open Errors**: Logged to console, file output disabled,
+  `set_file_output` returns `error_reason::file_open_failure`
 - **Write Failures**: Silent failure, no exceptions
-- **Configuration Errors**: Invalid settings ignored with warnings
+- **Configuration Errors**: Invalid settings ignored with warnings,
+  `set_time_format` returns `error_reason::invalid_time_format`
+- **Not Initialized**: Both setters are a no-op and return success
 
 ### Exception Safety
 - **No Exceptions**: Public API designed to never throw exceptions

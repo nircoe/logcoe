@@ -70,7 +70,8 @@ int main() {
     logcoe::initialize(logcoe::log_level::debug, "logcoe", true, true, "app.log");
     
     // Customize time format
-    logcoe::set_time_format("%H:%M:%S");
+    if (!logcoe::set_time_format("%H:%M:%S"))
+        return 1;
     
     // Log with source information
     logcoe::debug("Debugging network connection", "NetworkModule");
@@ -126,13 +127,20 @@ logcoe::set_log_level(logcoe::log_level::warning);
 log_level current = logcoe::get_log_level();
 
 // Output configuration
-logcoe::set_file_output("new_logfile.log");
+// set_file_output and set_time_format return std::expected<void, logcoe::error_reason>
+if (auto result = logcoe::set_file_output("new_logfile.log"); !result)
+{
+    // result.error() is logcoe::error_reason::file_open_failure
+}
 logcoe::disable_file_output();
 logcoe::set_console_output(std::cerr);
 logcoe::disable_console_output();
 
 // Time formatting (strftime compatible)
-logcoe::set_time_format("%Y-%m-%d %H:%M:%S");
+if (auto result = logcoe::set_time_format("%Y-%m-%d %H:%M:%S"); !result)
+{
+    // result.error() is logcoe::error_reason::invalid_time_format
+}
 ```
 
 ### Logging
@@ -213,7 +221,8 @@ or file I/O gets compiled in:
 - `initialize`, `debug`/`info`/`warning`/`error`, `flush`, `shutdown`, and the setters do nothing.
 - `is_initialized()` returns `false`.
 - `get_log_level()` returns `log_level::none`.
-- `set_file_output(...)` returns `false` and never creates a file.
+- `set_file_output(...)` returns `error_reason::file_open_failure` and never creates a file.
+- `set_time_format(...)` returns success.
 
 No opt-in macro or CMake option needed, it's automatic whenever `NDEBUG` is defined. That includes
 `RelWithDebInfo` and `MinSizeRel`, since CMake defines `NDEBUG` for those build types too, not just
