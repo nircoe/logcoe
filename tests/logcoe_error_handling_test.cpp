@@ -41,9 +41,7 @@ TEST_F(LogcoeErrorHandlingTest, SetFileOutputFailure)
 {
     logcoe::initialize();
 
-    std::string badPath = "nonexistent_dir_" +
-                          std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) + "/" +
-                          testFilename;
+    std::string badPath = "nonexistent_dir/" + testFilename;
     auto result = logcoe::set_file_output(badPath);
 
     EXPECT_FALSE(result.has_value());
