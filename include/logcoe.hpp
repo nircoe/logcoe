@@ -18,7 +18,8 @@ namespace logcoe
     enum class error_reason
     {
         file_open_failure,
-        invalid_time_format
+        invalid_time_format,
+        not_initialized
     };
 
     void initialize(log_level level = log_level::debug,

@@ -2,7 +2,8 @@
 
 ## Overview
 
-logcoe is designed as a lightweight, thread-safe logging library that provides flexible output management with minimal performance overhead. The public API hides all implementation details through an anonymous namespace containing free functions and static state, maintaining API stability across changes.
+logcoe is a thread-safe logging library. The public API is a set of free functions. The implementation is free
+functions and static state inside an anonymous namespace, so no implementation types are exposed.
 
 ## Component Architecture
 
@@ -35,24 +36,22 @@ logcoe is designed as a lightweight, thread-safe logging library that provides f
 ## Core Components
 
 ### Public API Layer
-- **File**: `include/logcoe.hpp`
-- **Purpose**: Provides clean, stable interface for client applications
-- **Key Features**:
-  - Simple function-based API
-  - No exposed implementation details
-  - Header-only public interface
-  - All functions forward to anonymous-namespace implementations
+- File: `include/logcoe.hpp`
+- Purpose: the interface client code calls
+- Function-based API, no implementation types exposed
+- Single public header
+- Every function forwards to the anonymous-namespace implementation
 
 ### Internal Implementation (Anonymous Namespace)
-- **File**: `src/logcoe.cpp` (anonymous namespace)
-- **Purpose**: Contains all logging logic and state management
-- **Design**: Free functions with implicit internal linkage through namespace scope
+- File: `src/logcoe.cpp` (anonymous namespace)
+- Purpose: all logging logic and state
+- Free functions with internal linkage through namespace scope
 
 #### Thread Safety Manager
 ```cpp
 std::mutex g_mutex;
 ```
-- Ensures thread-safe access to all state variables and operations
+- Guards all state variables and operations
 
 #### State Management
 ```cpp
@@ -61,7 +60,9 @@ bool        g_use_file;
 bool        g_use_console;
 std::string g_time_format;
 ```
-- Maintains current logger configuration, can be changed at runtime
+- Current logger configuration, can be changed at runtime
+- The block above is partial. `g_init_counter` (`unsigned int`) counts `initialize` calls and
+  `g_default_source` (`std::string`) holds the default source
 
 #### Output Stream Management
 ```cpp
@@ -69,12 +70,18 @@ std::string     g_filename;
 std::ofstream   g_file_stream;
 std::ostream*   g_console_stream;
 ```
-- **File Output**: Direct file stream management with automatic opening/closing
-- **Console Output**: Configurable output stream (default: std::cout)
+- File output: the `std::ofstream` is opened and closed by `initialize`, `set_file_output`, `disable_file_output` and
+  `shutdown`
+- Console output: configurable stream, `std::cout` by default
 
 ## Data Flow
 
 ### 1. Initialization Process
+
+Each `initialize` call raises `g_init_counter`. Only the first call runs the steps below, later calls log
+`[logcoe] Already initialized, ignoring new configurations`. `shutdown` lowers the counter and only the call that
+brings it to 0 closes the streams and resets the state.
+
 ```
 initialize() called
     ↓
@@ -99,13 +106,13 @@ log() internal function
     ↓
 Acquire mutex lock
     ↓
-Check log level filtering
-    ↓
 Generate timestamp
     ↓
 Format message with metadata
     ↓
 write_to_outputs()
+    ↓
+Check log level filtering
     ↓
 Write to console (if enabled)
     ↓
@@ -122,7 +129,7 @@ set_log_level/set_file_output/etc() called
     ↓
 Acquire mutex lock
     ↓
-Flush existing streams
+Flush existing streams (output changes only)
     ↓
 Update configuration
     ↓
@@ -133,14 +140,14 @@ Release mutex lock
 
 ## Thread Safety Implementation
 
-- **Single Global Mutex**: `std::mutex g_mutex`
-- **Lock Scope**: Every public API call acquires lock for entire duration
+- Single global mutex: `std::mutex g_mutex`
+- Lock scope: every public API call holds the lock for its entire duration
 
 ### Thread Safety Guarantees
-1. **Configuration Consistency**: All threads see consistent logger state
-2. **Message Integrity**: No interleaved log messages
-3. **Stream Safety**: No concurrent access to output streams
-4. **Atomic Updates**: Configuration changes are atomic
+1. Configuration consistency: all threads see consistent logger state
+2. Message integrity: log messages are not interleaved
+3. Stream safety: no concurrent access to output streams
+4. Atomic updates: configuration changes are atomic
 
 ## Cross-Platform Considerations
 
@@ -154,41 +161,46 @@ std::tm tm_now;
     localtime_r(&time_t_now, &tm_now);
 #endif
 ```
-- **Windows**: Uses `localtime_s` for thread safety
-- **Unix/Linux/macOS**: Uses `localtime_r` for thread safety
+- Windows: `localtime_s`
+- Linux and macOS: `localtime_r`
+- Both are the thread-safe variants
 
 ### File System Operations
-- **Path Handling**: Uses standard C++ filesystem operations
-- **File Permissions**: Relies on OS default permissions
+- Paths are handled with `std::filesystem`
+- `initialize` creates missing parent directories and deletes an existing file at the path
+- `set_file_output` opens the file for writing, which truncates an existing file
+- With the default filename `logcoe.log`, `initialize` uses `logcoe_<timestamp>.log` instead
+- File permissions are the OS defaults
 
 ### Build System Integration
-- **CMake**: FetchContent compatible
-- **Compiler Support**: C++23 standard requirements
-- **Library Type**: Static library
+- CMake: usable through FetchContent
+- Language standard: C++23, for `std::expected`
+- Library type: static
+- Warnings are errors (`-Werror -Wall -Wextra -Wpedantic`, `/W4 /WX` on MSVC)
 
 ## Release Build Stripping
 
-Under `NDEBUG`, the entire anonymous-namespace implementation is compiled out via
-`#ifndef NDEBUG`, so a Release build carries none of its code or state variables. The public
-`logcoe::` wrapper functions in `src/logcoe.cpp` switch to a separate `#ifdef NDEBUG` branch of
-no-op stubs, so every call site keeps compiling unchanged. Four stubs return a fixed value instead of an
-empty body, since there's no real state left to report: `is_initialized()` returns `false`,
-`get_log_level()` returns `log_level::none`, `set_file_output()` returns `error_reason::file_open_failure`
-(no file is ever created), and `set_time_format()` returns success. The guard is on the bare `NDEBUG`
-macro, not a check for a "Release" build type specifically, so `RelWithDebInfo` and `MinSizeRel`
-trigger the same stripping since CMake defines `NDEBUG` for them too.
+Under `NDEBUG`, the whole anonymous-namespace implementation is compiled out with `#ifndef NDEBUG`, so a Release
+build carries none of its code or state. The public `logcoe::` functions in `src/logcoe.cpp` switch to a separate
+`#ifdef NDEBUG` branch of no-op stubs, so call sites compile unchanged.
+
+Four stubs return a fixed value because there is no state left to report:
+- `is_initialized()` returns `false`
+- `get_log_level()` returns `log_level::none`
+- `set_file_output()` and `set_time_format()` return success, and no file is ever created
+
+A stripped build never changes a caller's control flow. The guard is the bare `NDEBUG` macro, not the "Release"
+build type, so `RelWithDebInfo` and `MinSizeRel` are stripped too, since CMake defines `NDEBUG` for them.
 
 ## Memory Management
 
 ### Static Storage
-- **Lifetime**: All state stored in static variables
-- **Initialization**: Lazy initialization through `initialize()`
-- **Cleanup**: Explicit cleanup through `shutdown()`
+- Lifetime: all state is stored in static variables
+- Activation: state becomes live on the first `initialize()`
+- Cleanup: `shutdown()` closes the file and resets the state when the init counter reaches 0
 
 ### Resource Management
-- **File Streams**: RAII through std::ofstream
-- **Memory Allocation**: No dynamic allocation for core operations
-- **Exception Safety**: Basic exception safety guarantees
+- File streams: RAII through `std::ofstream`
 
 ## Log Level Filtering
 
@@ -202,8 +214,8 @@ if (static_cast<int>(level) < static_cast<int>(g_log_level))
     return;
 ```
 
-- **Numeric Comparison**: Log levels assigned integer values
-- **Early Return**: Filtered messages exit immediately
+- Levels are compared as integers
+- The check is in `write_to_outputs()`, after the message is formatted. Filtered messages are dropped there
 
 ## Message Formatting
 
@@ -212,29 +224,30 @@ if (static_cast<int>(level) < static_cast<int>(g_log_level))
 [timestamp] [LEVEL] [source]: <message>
 ```
 
-- **Timestamp**: Configurable format using strftime
-- **Level**: String representation of log_level enum
-- **Source**: Optional component identifier
-- **Message**: User-provided content
+- Timestamp: `strftime` format, configurable
+- Level: string form of `log_level`
+- Source: optional component identifier, falls back to the default source from `initialize`
+- Message: the text passed by the caller
 
 ## Error Handling
 
 ### Stream Failures
-- **File Open Errors**: Logged to console, file output disabled,
+- File open errors: logged to the outputs and file output is disabled.
   `set_file_output` returns `error_reason::file_open_failure`
-- **Write Failures**: Silent failure, no exceptions
-- **Configuration Errors**: Invalid settings ignored with warnings,
-  `set_time_format` returns `error_reason::invalid_time_format`
-- **Not Initialized**: Both setters are a no-op and return success
+- Write failures: ignored silently
+- Invalid time format: the current format is kept and an error is logged.
+  `set_time_format` returns `error_reason::invalid_time_format`. A format that formats to an empty string
+  is invalid
+- Not initialized: `set_file_output` and `set_time_format` do nothing and return
+  `error_reason::not_initialized`
 
 ### Exception Safety
-- **No Exceptions**: Public API designed to never throw exceptions
-- **Resource Safety**: RAII ensures proper resource cleanup
-- **State Consistency**: Mutex ensures consistent state even with errors
+- The API reports failures through return values and does not throw by design
+- File streams close through RAII
+- The mutex keeps state consistent when an operation fails
 
 ## Performance Characteristics
 
-### Time Complexity
-- **Logging**: O(1) for level filtering, O(log_message_length) for formatting
-- **Configuration**: O(1) for most operations
-- **Thread Contention**: Minimal with short lock durations
+- One global mutex serializes all calls, and formatting and I/O run under it
+- Each message is written with `std::endl`, which flushes the stream, so the `flush` argument currently adds
+  nothing

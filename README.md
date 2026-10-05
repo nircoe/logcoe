@@ -1,6 +1,6 @@
 # logcoe
 
-Thread-safe C++ logging library with real-time output and customizable formatting.
+Thread-safe C++ logging library with console and file output and a configurable time format.
 
 [![Windows](https://github.com/nircoe/logcoe/actions/workflows/ci-windows.yml/badge.svg)](https://github.com/nircoe/logcoe/actions/workflows/ci-windows.yml)
 [![Linux](https://github.com/nircoe/logcoe/actions/workflows/ci-linux.yml/badge.svg)](https://github.com/nircoe/logcoe/actions/workflows/ci-linux.yml)
@@ -8,7 +8,7 @@ Thread-safe C++ logging library with real-time output and customizable formattin
 
 ## What is logcoe?
 
-logcoe is a lightweight, thread-safe C++ logging library designed for high-performance applications. It provides flexible output options and real-time logging with minimal overhead:
+logcoe is a small thread-safe C++ logging library. It writes to the console, to a file or to both:
 
 ```
 [06/07/2025__14:30:25] [INFO]: Application started successfully
@@ -17,11 +17,9 @@ logcoe is a lightweight, thread-safe C++ logging library designed for high-perfo
 [06/07/2025__14:30:27] [ERROR] [FileSystem]: Failed to open configuration file
 ```
 
-Perfect for applications requiring reliable logging across multiple threads with customizable output destinations.
-
 ## Dependencies
-- **C++23 or later** - Modern C++ standard support
-- **CMake 3.22+** - Build system
+
+No third-party libraries. Toolchain versions are under [Requirements](#requirements).
 
 ## Quick Start
 
@@ -91,73 +89,27 @@ int main() {
 
 ## Features
 
-- **Thread-Safe** - Concurrent logging from multiple threads
-- **Multiple Log Levels** - DEBUG, INFO, WARNING, ERROR with runtime filtering
-- **Dual Output** - Console and file output simultaneously
-- **High Performance** - Minimal overhead with optional flushing control
-- **Customizable** - Configurable time formats and output streams
-- **Dynamic Configuration** - Change settings during runtime
-- **Zero Dependencies** - Header-only public API, pure C++23
-- **Cross-Platform** - Windows, Linux, macOS support
+- Thread-safe, one mutex guards every call
+- Log levels debug, info, warning and error, filtered at runtime
+- Console and file output at the same time
+- Log level, console stream, log file and time format can change at runtime
+- One public header, built as a static library
+- Windows, Linux and macOS
+- Compiles to no-op stubs in Release builds, see [Release Builds](#release-builds)
 
 ## API Reference
 
-### Initialization
-```cpp
-// Basic initialization
-logcoe::initialize();
+All functions are declared in `include/logcoe.hpp`, with their default arguments.
 
-// Full configuration
-logcoe::initialize(
-    logcoe::log_level::debug,  // Log level
-    "logcoe",                  // Default source
-    true,                      // Enable console
-    true,                      // Enable file
-    "application.log"          // Filename
-);
-
-// shutdown
-logcoe::shutdown();
-```
-
-### Configuration
-```cpp
-// Runtime log level changes
-logcoe::set_log_level(logcoe::log_level::warning);
-log_level current = logcoe::get_log_level();
-
-// Output configuration
-// set_file_output and set_time_format return std::expected<void, logcoe::error_reason>
-if (auto result = logcoe::set_file_output("new_logfile.log"); !result)
-{
-    // result.error() is logcoe::error_reason::file_open_failure
-}
-logcoe::disable_file_output();
-logcoe::set_console_output(std::cerr);
-logcoe::disable_console_output();
-
-// Time formatting (strftime compatible)
-if (auto result = logcoe::set_time_format("%Y-%m-%d %H:%M:%S"); !result)
-{
-    // result.error() is logcoe::error_reason::invalid_time_format
-}
-```
-
-### Logging
-```cpp
-// Basic logging
-logcoe::debug("Debug message");
-logcoe::info("Information message");
-logcoe::warning("Warning message");
-logcoe::error("Error message");
-
-// With source identification
-logcoe::info("User action completed", "UserController");
-
-// Control flushing for performance
-logcoe::info("High frequency message", "", false);  // No immediate flush
-logcoe::flush();  // Flush all pending messages
-```
+- `initialize` can be called more than once. Later calls ignore their arguments and only raise a counter.
+  Logging stops after the matching number of `shutdown` calls.
+- The logging functions and the setters do nothing before `initialize`.
+- The logging functions take an optional `source` and a `flush` flag (default `true`).
+  `logcoe::flush()` flushes the console and file outputs.
+- `set_file_output` and `set_time_format` return `std::expected<void, logcoe::error_reason>` and are `[[nodiscard]]`.
+- `error_reason` is `file_open_failure`, `invalid_time_format` or `not_initialized`.
+  Both functions return `not_initialized` when called before `initialize`.
+- Time formats use `strftime` syntax.
 
 ## Log Levels
 
@@ -171,69 +123,35 @@ logcoe::flush();  // Flush all pending messages
 
 ## Thread Safety
 
-logcoe is fully thread-safe and designed for high-concurrency environments:
-
-```cpp
-#include <thread>
-#include <vector>
-
-void worker_thread(int id) {
-    for (int i = 0; i < 1000; ++i) {
-        logcoe::info("Worker " + std::to_string(id) + " processing item " + std::to_string(i));
-    }
-}
-
-int main() {
-    logcoe::initialize(logcoe::log_level::info, std::string{}, false, true, "concurrent.log");
-    
-    std::vector<std::thread> workers;
-    for (int i = 0; i < 10; ++i) {
-        workers.emplace_back(worker_thread, i);
-    }
-    
-    for (auto& t : workers) {
-        t.join();
-    }
-    
-    logcoe::shutdown();
-    return 0;
-}
-```
+All functions can be called from any thread. A single mutex is held for the whole of each call,
+see [Architecture](docs/ARCHITECTURE.md).
 
 ## Requirements
 
-- **Compiler**: C++23 compatible
-- **Build System**: CMake 3.22+
-- **Platforms**: Windows, Linux, macOS
-
-## Performance Considerations
-
-- **Flushing**: Set `flush=false` for high-frequency logging to improve performance
-- **Log Levels**: Higher log levels filter out lower-priority messages at minimal cost
-- **Thread Contention**: Minimal mutex contention with efficient lock granularity
+- Compiler: C++23 with `<expected>` (GCC 12+, Clang 16+, Apple Clang from Xcode 15+, MSVC 2022 17.3+)
+- Build system: CMake 3.22+
+- Platforms: Windows, Linux, macOS
 
 ## Release Builds
 
-Defining `NDEBUG` (e.g. `-DCMAKE_BUILD_TYPE=Release`) strips logcoe down to no-op stubs at compile
-time. Every call site keeps working with zero code changes, but none of the logging, formatting,
-or file I/O gets compiled in:
+Defining `NDEBUG` (for example `-DCMAKE_BUILD_TYPE=Release`) replaces every function with a no-op stub at
+compile time. Call sites compile unchanged, but nothing is logged, formatted or written to a file:
 
-- `initialize`, `debug`/`info`/`warning`/`error`, `flush`, `shutdown`, and the setters do nothing.
+- `initialize`, `debug`/`info`/`warning`/`error`, `flush`, `shutdown` and the other setters do nothing.
 - `is_initialized()` returns `false`.
 - `get_log_level()` returns `log_level::none`.
-- `set_file_output(...)` returns `error_reason::file_open_failure` and never creates a file.
+- `set_file_output(...)` returns success and never creates a file.
 - `set_time_format(...)` returns success.
 
-No opt-in macro or CMake option needed, it's automatic whenever `NDEBUG` is defined. That includes
-`RelWithDebInfo` and `MinSizeRel`, since CMake defines `NDEBUG` for those build types too, not just
-`Release`.
+This is automatic whenever `NDEBUG` is defined, no option is needed. It includes `RelWithDebInfo` and
+`MinSizeRel`, because CMake defines `NDEBUG` for those build types too.
 
 ## Documentation
 
-- [Architecture](docs/ARCHITECTURE.md) - Internal design and implementation details
-- [Contributing](docs/CONTRIBUTING.md) - Development setup and contribution guidelines
-- [Roadmap](docs/ROADMAP.md) - Version history and planned features
+- [Architecture](docs/ARCHITECTURE.md): how it works
+- [Contributing](docs/CONTRIBUTING.md): build, test and PR rules
+- [Roadmap](docs/ROADMAP.md): version history and planned features
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT License, see [LICENSE](LICENSE).

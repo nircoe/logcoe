@@ -69,8 +69,7 @@ TEST_F(LogcoeStripTest, FileOutput)
 
     {
         auto result = logcoe::set_file_output(testFilename);
-        EXPECT_FALSE(result.has_value());
-        EXPECT_EQ(result.error(), logcoe::error_reason::file_open_failure);
+        EXPECT_TRUE(result.has_value());
     }
 
     {

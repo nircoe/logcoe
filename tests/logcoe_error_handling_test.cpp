@@ -49,6 +49,15 @@ TEST_F(LogcoeErrorHandlingTest, SetFileOutputFailure)
     EXPECT_FALSE(std::filesystem::exists(badPath));
 }
 
+TEST_F(LogcoeErrorHandlingTest, SetFileOutputNotInitialized)
+{
+    auto result = logcoe::set_file_output(testFilename);
+
+    EXPECT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), logcoe::error_reason::not_initialized);
+    EXPECT_FALSE(std::filesystem::exists(testFilename));
+}
+
 TEST_F(LogcoeErrorHandlingTest, SetTimeFormatSuccess)
 {
     logcoe::initialize();
@@ -68,4 +77,12 @@ TEST_F(LogcoeErrorHandlingTest, SetTimeFormatFailure)
 
     EXPECT_FALSE(result.has_value());
     EXPECT_EQ(result.error(), logcoe::error_reason::invalid_time_format);
+}
+
+TEST_F(LogcoeErrorHandlingTest, SetTimeFormatNotInitialized)
+{
+    auto result = logcoe::set_time_format("%H:%M:%S");
+
+    EXPECT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), logcoe::error_reason::not_initialized);
 }

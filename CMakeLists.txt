@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(logcoe VERSION 0.1.0 LANGUAGES CXX)
+project(logcoe VERSION 0.1.1 LANGUAGES CXX)
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Default install path" FORCE)
