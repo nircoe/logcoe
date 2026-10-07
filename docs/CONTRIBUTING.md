@@ -5,7 +5,7 @@
 ### Prerequisites
 - CMake 3.22+
 - C++23 compiler with `<expected>` (GCC 12+, Clang 16+ with libc++, Xcode 15+, MSVC 2022 17.3+)
-- Git, CMake fetches testcoe from GitHub when it is not installed
+- Git, CMake fetches testcoe from GitHub when `LOGCOE_BUILD_TESTS` is ON
 
 ### Building from Source
 
@@ -38,6 +38,8 @@ There are two executables:
 ```
 logcoe/
 ├── cmake/
+│   ├── logcoe_config.cmake            # Includes the other cmake files
+│   ├── testcoe.cmake                  # Fetches testcoe from source
 │   └── utils.cmake                    # Warning flags, MinGW static runtime, testcoe warning suppression
 ├── include/
 │   └── logcoe.hpp                     # Public API header
