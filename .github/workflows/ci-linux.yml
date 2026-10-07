@@ -22,10 +22,11 @@ jobs:
                       cmake-options: '-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_BUILD_TYPE=Debug'
                       test-target: logcoe_tests
 
+                    # libstdc++'s <expected> is incompatible with Clang, so this job builds with libc++
                     - name: "Linux Clang Debug"
                       compiler: clang
                       cmake-generator: 'Ninja'
-                      cmake-options: '-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Debug'
+                      cmake-options: '-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS=-stdlib=libc++ -DCMAKE_EXE_LINKER_FLAGS=-stdlib=libc++'
                       test-target: logcoe_tests
 
                     - name: "Linux GCC Release"
@@ -45,7 +46,13 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y ninja-build
           shell: bash
-        
+
+        - name: Install libc++
+          if: matrix.compiler == 'clang'
+          run: |
+            sudo apt-get install -y libc++-18-dev libc++abi-18-dev
+          shell: bash
+
         - name: Configure CMake
           run: |
             cmake -B build -G "${{ matrix.cmake-generator }}" ${{ matrix.cmake-options }} -DLOGCOE_BUILD_TESTS=ON
@@ -53,7 +60,7 @@ jobs:
 
         - name: Build
           run: |
-            cmake --build build --config Release
+            cmake --build build
           shell: bash
         
         - name: Run tests

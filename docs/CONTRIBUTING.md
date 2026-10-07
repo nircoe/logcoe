@@ -1,13 +1,11 @@
 # Contributing to logcoe
 
-Thank you for your interest in contributing to logcoe!
-
 ## Development Setup
 
 ### Prerequisites
 - CMake 3.22+
-- C++23 compatible compiler
-- Git
+- C++23 compiler with `<expected>` (GCC 12+, Clang 16+ with libc++, Xcode 15+, MSVC 2022 17.3+)
+- Git, CMake fetches testcoe from GitHub when it is not installed
 
 ### Building from Source
 
@@ -21,97 +19,78 @@ cmake --build .
 
 ### Running Tests
 
-logcoe uses [testcoe](https://github.com/nircoe/testcoe) for its test suite, providing enhanced test visualization:
+Tests use [testcoe](https://github.com/nircoe/testcoe), a GoogleTest wrapper.
+There are two executables:
+
+- `logcoe_tests` covers the real implementation, build without `NDEBUG` (Debug)
+- `logcoe_strip_tests` covers the no-op stubs, build with `NDEBUG` (Release)
 
 ```bash
-# Run all tests
+# Debug build
 ./tests/logcoe_tests
 
-# Tests include:
-# - Basic functionality tests
-# - Thread safety verification
-# - Cross-platform compatibility
-# - Performance validation
+# Release build
+./tests/logcoe_strip_tests
 ```
 
 ## Project Structure
 
 ```
 logcoe/
+├── cmake/
+│   └── utils.cmake                    # Warning flags, MinGW static runtime, testcoe warning suppression
 ├── include/
-│   └── logcoe.hpp          # Public API header
+│   └── logcoe.hpp                     # Public API header
 ├── src/
-│   └── logcoe.cpp          # Implementation
+│   └── logcoe.cpp                     # Implementation
 ├── tests/
-│   ├── main.cpp            # Test runner
-│   ├── logcoe_test.cpp     # Functional tests
-│   └── logcoe_thread_test.cpp # Thread safety tests
-├── docs/                   # Documentation
-└── .github/workflows/      # CI configuration
+│   ├── CMakeLists.txt
+│   ├── main.cpp                       # Test runner
+│   ├── logcoe_test.cpp                # Functional tests
+│   ├── logcoe_thread_test.cpp         # Thread safety tests
+│   ├── logcoe_error_handling_test.cpp # std::expected results of the setters
+│   └── logcoe_strip_test.cpp          # NDEBUG stub tests
+├── docs/                              # Documentation
+└── .github/workflows/                 # CI configuration
 ```
 
 ## Continuous Integration
 
-All pull requests are automatically tested on:
+GitHub Actions runs on pushes to `main` and on pull requests to `main`, skipping draft PRs.
+Each job configures with `-DLOGCOE_BUILD_TESTS=ON`, builds, then runs one test executable.
+Compilers are the ones on the GitHub runners, versions are not pinned.
+The Linux Clang job builds with libc++, because libstdc++'s `<expected>` is incompatible with Clang.
 
-- **Windows**: MSVC 2019/2022 and MinGW
-- **Linux**: GCC 7+ and Clang 5+  
-- **macOS**: Apple Clang (Xcode 10+)
+- Windows: MSVC Debug and Release, MinGW (GCC) Debug
+- Linux: GCC Debug and Release, Clang with libc++ Debug
+- macOS: Apple Clang Debug and Release
 
-### CI Pipeline Details
-
-The CI runs the following checks:
-1. Build the library with different compilers
-2. Run comprehensive test suite
-3. Verify thread safety under load
-4. Test cross-platform compatibility
-5. Check memory safety (when available)
+Debug jobs run `logcoe_tests`, Release jobs run `logcoe_strip_tests`.
+CI does not run sanitizers or benchmarks.
 
 ## Making Changes
 
 ### Code Style
-- Follow existing naming conventions:
-  - `snake_case` for functions, variables, types, and enumerators
-  - `g_` prefix for anonymous-namespace variables (implicit internal linkage)
-  - Trailing underscore for parameters that would otherwise shadow another identifier in scope (e.g. a `flush` parameter is renamed to `flush_` to avoid shadowing the `flush()` function)
-- Keep lines under 120 characters
-- Add comments for complex logic
-- Use `const` and `constexpr` where appropriate
-
-### Example Code Style
-```cpp
-namespace
-{
-    void set_log_level(log_level level) 
-    {
-        std::lock_guard<std::mutex> lock(g_mutex);
-        g_log_level = level;
-    }
-}
-```
+- `snake_case` for functions, variables, types, and enumerators
+- `g_` prefix for anonymous-namespace variables
+- Trailing underscore for a parameter that would shadow another identifier in scope
+  (a `flush` parameter becomes `flush_` so it does not shadow the `flush()` function)
+- Lines under 120 characters
+- Warnings are errors in the library and the tests (`-Werror -Wall -Wextra -Wpedantic`, `/W4 /WX` on MSVC)
 
 ### Testing Guidelines
-- Add tests for new features in appropriate test files
-- Ensure thread safety tests pass for concurrent operations
-- Test edge cases and error conditions
-- Verify cross-platform behavior through CI
-- Include performance considerations for new features
+- Put functional tests in `logcoe_test.cpp` and concurrency tests in `logcoe_thread_test.cpp`
+- Put tests for `std::expected` results in `logcoe_error_handling_test.cpp`
+- A new public function also needs a case in `logcoe_strip_test.cpp`
 
 ### Pull Request Process
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes following the code style
-4. Add/update tests as needed
-5. Run tests locally and ensure they pass
-6. Commit with clear, descriptive messages
-7. Push to your fork
-8. Open a Pull Request from your fork to the main repository
+PRs target `main` and are squash-merged. The CI jobs above run on every PR.
 
 ### Commit Messages
-- Use prefix for PR title `[Subject]: <PR title>`
-- PR description should describe the major changes in bullet-points
-- Sqaushed commit title should be the PR title, and the message should be PR description
+- PR title: `[Category]: <title>`
+- PR description: the major changes as bullet points
+- The squashed commit uses the PR title as its title and the PR description as its message
 
 Example:
 ```
@@ -124,39 +103,18 @@ Example:
 
 ## Adding New Features
 
-When adding features:
-
-1. **Update Public API** (if needed):
-   - Modify `include/logcoe.hpp`
-   - Maintain backward compatibility
-   - Add documentation comments
-
-2. **Implement in the anonymous namespace**:
-   - Add to `src/logcoe.cpp`
-   - Ensure thread safety with proper locking
-   - Handle error cases gracefully
-
-3. **Add Tests**:
-   - Functional tests in `logcoe_test.cpp`
-   - Thread safety tests in `logcoe_thread_test.cpp`
-   - Test both success and failure cases
-
-4. **Update Documentation**:
-   - Update README.md examples
-   - Add to API reference section
-   - Update architecture docs if needed
+1. Update the public API in `include/logcoe.hpp` if needed.
+2. Implement it in the anonymous namespace in `src/logcoe.cpp`, with the locking described below.
+3. Add a no-op stub in the `NDEBUG` branch of the public wrappers in `src/logcoe.cpp`.
+4. Add tests, covering both success and failure cases.
+5. Update the README and the docs if behavior changed.
 
 ## Thread Safety Guidelines
 
-When modifying logcoe:
-
-1. **Always Use Mutex**: Every function that accesses static state must lock `g_mutex`
-2. **Minimize Lock Duration**: Perform I/O operations efficiently under lock
-3. **Avoid Nested Locks**: Current design uses single mutex to prevent deadlocks
-4. **Test Concurrency**: Add thread safety tests for new features
+1. Every function that accesses static state locks `g_mutex` for its full duration.
+2. Do not nest locks. The single mutex is not recursive, so internal helpers must not take it again.
+3. Add a thread safety test for new features that touch shared state.
 
 ## Questions?
 
-Feel free to reach out at nircoe@gmail.com
-
-I'm here to help make contributing to logcoe as smooth as possible!
+Contact: nircoe@gmail.com
