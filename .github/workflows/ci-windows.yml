@@ -51,7 +51,7 @@ jobs:
 
         - name: Build
           run: |
-            cmake --build build --config Release
+            cmake --build build
           shell: bash
         
         - name: Run tests

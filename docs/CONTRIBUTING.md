@@ -4,7 +4,7 @@
 
 ### Prerequisites
 - CMake 3.22+
-- C++23 compiler with `<expected>` (GCC 12+, Clang 16+, Xcode 15+, MSVC 2022 17.3+)
+- C++23 compiler with `<expected>` (GCC 12+, Clang 16+ with libc++, Xcode 15+, MSVC 2022 17.3+)
 - Git, CMake fetches testcoe from GitHub when it is not installed
 
 ### Building from Source
@@ -59,9 +59,10 @@ logcoe/
 GitHub Actions runs on pushes to `main` and on pull requests to `main`, skipping draft PRs.
 Each job configures with `-DLOGCOE_BUILD_TESTS=ON`, builds, then runs one test executable.
 Compilers are the ones on the GitHub runners, versions are not pinned.
+The Linux Clang job builds with libc++, because libstdc++'s `<expected>` is incompatible with Clang.
 
 - Windows: MSVC Debug and Release, MinGW (GCC) Debug
-- Linux: GCC Debug and Release, Clang Debug
+- Linux: GCC Debug and Release, Clang with libc++ Debug
 - macOS: Apple Clang Debug and Release
 
 Debug jobs run `logcoe_tests`, Release jobs run `logcoe_strip_tests`.

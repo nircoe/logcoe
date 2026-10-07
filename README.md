@@ -128,7 +128,7 @@ see [Architecture](docs/ARCHITECTURE.md).
 
 ## Requirements
 
-- Compiler: C++23 with `<expected>` (GCC 12+, Clang 16+, Apple Clang from Xcode 15+, MSVC 2022 17.3+)
+- Compiler: C++23 with `<expected>` (GCC 12+, Clang 16+ with libc++, Apple Clang from Xcode 15+, MSVC 2022 17.3+)
 - Build system: CMake 3.22+
 - Platforms: Windows, Linux, macOS
 
