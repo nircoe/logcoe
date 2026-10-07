@@ -1,17 +1,3 @@
-find_package(testcoe QUIET)
-if(testcoe_FOUND)
-    message(STATUS "[logcoe] Using existing testcoe installation")
-else()
-    message(STATUS "[logcoe] testcoe not found, fetching from source")
-    include(FetchContent)
-    FetchContent_Declare(
-        testcoe
-        GIT_REPOSITORY https://github.com/nircoe/testcoe.git
-        GIT_TAG v0.1.1
-    )
-    FetchContent_MakeAvailable(testcoe)
-endif()
-
 logcoe_ignore_external_warnings(testcoe)
 
 add_executable(logcoe_tests main.cpp logcoe_test.cpp logcoe_thread_test.cpp logcoe_error_handling_test.cpp)
