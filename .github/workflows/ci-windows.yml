@@ -20,33 +20,60 @@ jobs:
                       compiler: msvc
                       cmake-generator: 'Ninja'
                       cmake-options: '-DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DCMAKE_BUILD_TYPE=Debug'
+                      cache-cmake-options: >-
+                          -DCMAKE_C_COMPILER_LAUNCHER=sccache
+                          -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+                          -DCMAKE_POLICY_DEFAULT_CMP0141=NEW
+                          -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded
                       test-target: logcoe_tests
                     
                     - name: "Windows MinGW Debug"
                       compiler: gcc
-                      cmake-generator: 'MinGW Makefiles'
+                      cmake-generator: 'Ninja'
                       cmake-options: '-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_BUILD_TYPE=Debug'
+                      cache-cmake-options: '-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache'
                       test-target: logcoe_tests
                     
                     - name: "Windows MSVC Release"
                       compiler: msvc
                       cmake-generator: 'Ninja'
                       cmake-options: '-DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DCMAKE_BUILD_TYPE=Release'
+                      cache-cmake-options: >-
+                          -DCMAKE_C_COMPILER_LAUNCHER=sccache
+                          -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+                          -DCMAKE_POLICY_DEFAULT_CMP0141=NEW
+                          -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded
                       test-target: logcoe_strip_tests
 
         steps:
         - name: Checkout repository
           uses: actions/checkout@v7
+
+        - name: Setup ccache
+          if: matrix.compiler == 'gcc'
+          uses: hendrikmuhs/ccache-action@v1.2
           with:
-            submodules: 'recursive'
+            key: ccache-${{ runner.os }}-${{ matrix.name }}-${{
+              hashFiles('cmake/testcoe.cmake', 'tests/CMakeLists.txt') }}
+            restore-keys: ccache-${{ runner.os }}-${{ matrix.name }}-
 
         - name: Setup MSVC dev environment
           if: matrix.compiler == 'msvc'
           uses: ilammy/msvc-dev-cmd@v1.13.0
 
+        - name: Setup sccache
+          if: matrix.compiler == 'msvc'
+          uses: mozilla-actions/sccache-action@v0.0.11
+
+        - name: Set sccache env vars
+          if: matrix.compiler == 'msvc'
+          run: echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
+          shell: bash
+
         - name: Configure CMake
           run: |
-            cmake -B build -G "${{ matrix.cmake-generator }}" ${{ matrix.cmake-options }} -DLOGCOE_BUILD_TESTS=ON
+            cmake -B build -G "${{ matrix.cmake-generator }}" ${{ matrix.cmake-options }} \
+                ${{ matrix.cache-cmake-options }} -DLOGCOE_BUILD_TESTS=ON
           shell: bash
 
         - name: Build
