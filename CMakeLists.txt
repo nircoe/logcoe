@@ -8,6 +8,12 @@ endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+include(FetchContent)
+include(cmake/logcoe_config.cmake)
+
+option(LOGCOE_BUILD_TESTS "Build the logcoe test suite" OFF)
 
 add_library(logcoe STATIC src/logcoe.cpp)
 
@@ -17,12 +23,14 @@ target_include_directories(logcoe
         $<INSTALL_INTERFACE:include>
 )
 
-include(cmake/utils.cmake)
-
 logcoe_enable_strict_warnings(logcoe)
 
-option(LOGCOE_BUILD_TESTS "Build the logcoe test suite" OFF)
+if(MINGW)
+    target_link_options(logcoe INTERFACE -static-libgcc -static-libstdc++ -static)
+endif()
+
 if(LOGCOE_BUILD_TESTS)
+    logcoe_fetch_testcoe()
     add_subdirectory(tests)
 endif()
 
@@ -42,5 +50,3 @@ install(EXPORT logcoe-targets
     FILE logcoe-targets.cmake
     DESTINATION lib/cmake/logcoe
 )
-
-

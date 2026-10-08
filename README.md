@@ -19,7 +19,8 @@ logcoe is a small thread-safe C++ logging library. It writes to the console, to 
 
 ## Dependencies
 
-No third-party libraries. Toolchain versions are under [Requirements](#requirements).
+No third-party libraries. Building the tests fetches [testcoe](https://github.com/nircoe/testcoe) from source.
+Toolchain versions are under [Requirements](#requirements).
 
 ## Quick Start
 
