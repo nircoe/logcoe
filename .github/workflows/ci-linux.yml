@@ -12,6 +12,8 @@ jobs:
         name: ${{ matrix.name }}
         runs-on: ubuntu-latest
         if: github.event.pull_request.draft == false || github.event_name == 'push'
+        env:
+            CACHE_CMAKE_OPTIONS: '-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache'
         strategy:
             fail-fast: false
             matrix:
@@ -38,24 +40,25 @@ jobs:
         steps:
         - name: Checkout repository
           uses: actions/checkout@v7
-          with:
-            submodules: 'recursive'
-
-        - name: Install ninja-build
-          run: |
-            sudo apt-get update
-            sudo apt-get install -y ninja-build
-          shell: bash
 
         - name: Install libc++
           if: matrix.compiler == 'clang'
           run: |
+            sudo apt-get update
             sudo apt-get install -y libc++-18-dev libc++abi-18-dev
           shell: bash
 
+        - name: Setup ccache
+          uses: hendrikmuhs/ccache-action@v1.2
+          with:
+            key: ccache-${{ runner.os }}-${{ matrix.name }}-${{
+              hashFiles('cmake/testcoe.cmake', 'tests/CMakeLists.txt') }}
+            restore-keys: ccache-${{ runner.os }}-${{ matrix.name }}-
+
         - name: Configure CMake
           run: |
-            cmake -B build -G "${{ matrix.cmake-generator }}" ${{ matrix.cmake-options }} -DLOGCOE_BUILD_TESTS=ON
+            cmake -B build -G "${{ matrix.cmake-generator }}" ${{ matrix.cmake-options }} \
+                ${{ env.CACHE_CMAKE_OPTIONS }} -DLOGCOE_BUILD_TESTS=ON
           shell: bash
 
         - name: Build
