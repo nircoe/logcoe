@@ -1,10 +1,14 @@
 #include <logcoe.hpp>
 #include <chrono>
+#include <cstddef>
+#include <ctime>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <mutex>
 #include <sstream>
+#include <system_error>
+#include <utility>
 
 using logcoe::log_level;
 
@@ -59,16 +63,17 @@ namespace
                     return "WARNING";
                 case log_level::error:
                     return "ERROR";
-                default:
+                case log_level::none:
                     return "NONE";
             }
+            std::unreachable();
         }
 
         void write_to_outputs(const std::string &formatted_message,
                               log_level level = log_level::info,
                               bool flush_ = true)
         {
-            if (g_init_counter == 0 || static_cast<int>(level) < static_cast<int>(g_log_level)) return;
+            if (g_init_counter == 0 || std::to_underlying(level) < std::to_underlying(g_log_level)) return;
 
             if (g_use_console && g_console_stream)
             {
@@ -91,7 +96,7 @@ namespace
 
         void log(log_level level, const std::string &message, const std::string &source, bool flush_)
         {
-            std::lock_guard<std::mutex> lock(g_mutex);
+            std::scoped_lock lock(g_mutex);
             if (g_init_counter == 0) return;
 
             const std::string &resolved_source = source.empty() ? g_default_source : source;
@@ -111,7 +116,7 @@ namespace
                         bool enable_file,
                         const std::string &filename)
         {
-            std::lock_guard<std::mutex> lock(g_mutex);
+            std::scoped_lock lock(g_mutex);
             if (g_init_counter++ > 0)
                 return write_to_outputs("[logcoe] Already initialized, ignoring new configurations");
 
@@ -130,12 +135,13 @@ namespace
                 if (g_file_stream.is_open()) g_file_stream.close();
 
                 std::filesystem::path filepath(g_filename);
+                std::error_code ec;
 
-                if (filepath.has_parent_path() && !std::filesystem::exists(filepath.parent_path()))
-                    std::filesystem::create_directories(filepath.parent_path());
+                if (filepath.has_parent_path() && !std::filesystem::exists(filepath.parent_path(), ec))
+                    std::filesystem::create_directories(filepath.parent_path(), ec);
 
-                if (std::filesystem::exists(filepath) && std::filesystem::is_regular_file(filepath))
-                    std::filesystem::remove(filepath);
+                if (std::filesystem::exists(filepath, ec) && std::filesystem::is_regular_file(filepath, ec))
+                    std::filesystem::remove(filepath, ec);
 
                 g_file_stream.open(g_filename);
                 if (!g_file_stream.is_open())
@@ -150,14 +156,14 @@ namespace
 
         void flush()
         {
-            std::lock_guard<std::mutex> lock(g_mutex);
+            std::scoped_lock lock(g_mutex);
             if (g_init_counter == 0) return;
             flush_streams();
         }
 
         void shutdown()
         {
-            std::lock_guard<std::mutex> lock(g_mutex);
+            std::scoped_lock lock(g_mutex);
             if (g_init_counter == 0) return;
             if (--g_init_counter > 0) return;
 
@@ -177,7 +183,7 @@ namespace
 
         void set_log_level(log_level level)
         {
-            std::lock_guard<std::mutex> lock(g_mutex);
+            std::scoped_lock lock(g_mutex);
             if (g_init_counter == 0) return;
 
             g_log_level = level;
@@ -185,7 +191,7 @@ namespace
 
         void set_console_output(std::ostream &stream)
         {
-            std::lock_guard<std::mutex> lock(g_mutex);
+            std::scoped_lock lock(g_mutex);
             if (g_init_counter == 0) return;
 
             if (g_use_console && g_console_stream) g_console_stream->flush();
@@ -193,9 +199,9 @@ namespace
             g_use_console = true;
         }
 
-        std::expected<void, logcoe::error_reason> set_file_output(const std::string &filename)
+        [[nodiscard]] std::expected<void, logcoe::error_reason> set_file_output(const std::string &filename)
         {
-            std::lock_guard<std::mutex> lock(g_mutex);
+            std::scoped_lock lock(g_mutex);
             if (g_init_counter == 0) return std::unexpected(logcoe::error_reason::not_initialized);
 
             if (g_file_stream.is_open())
@@ -220,7 +226,7 @@ namespace
 
         void disable_console_output()
         {
-            std::lock_guard<std::mutex> lock(g_mutex);
+            std::scoped_lock lock(g_mutex);
             if (g_init_counter == 0) return;
 
             if (g_use_console && g_console_stream) g_console_stream->flush();
@@ -230,7 +236,7 @@ namespace
 
         void disable_file_output()
         {
-            std::lock_guard<std::mutex> lock(g_mutex);
+            std::scoped_lock lock(g_mutex);
             if (g_init_counter == 0) return;
 
             if (g_file_stream.is_open())
@@ -243,9 +249,9 @@ namespace
             g_use_file = false;
         }
 
-        std::expected<void, logcoe::error_reason> set_time_format(const std::string &format)
+        [[nodiscard]] std::expected<void, logcoe::error_reason> set_time_format(const std::string &format)
         {
-            std::lock_guard<std::mutex> lock(g_mutex);
+            std::scoped_lock lock(g_mutex);
             if (g_init_counter == 0) return std::unexpected(logcoe::error_reason::not_initialized);
 
             auto now = std::chrono::system_clock::now();
@@ -273,14 +279,14 @@ namespace
 
         bool is_initialized()
         {
-            std::lock_guard<std::mutex> lock(g_mutex);
+            std::scoped_lock lock(g_mutex);
 
             return g_init_counter > 0;
         }
 
         log_level get_log_level()
         {
-            std::lock_guard<std::mutex> lock(g_mutex);
+            std::scoped_lock lock(g_mutex);
 
             return g_log_level;
         }

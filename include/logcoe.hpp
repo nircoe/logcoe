@@ -36,8 +36,8 @@ namespace logcoe
     void disable_file_output();
     [[nodiscard]] std::expected<void, error_reason> set_time_format(const std::string &format);
 
-    bool is_initialized();
-    log_level get_log_level();
+    [[nodiscard]] bool is_initialized();
+    [[nodiscard]] log_level get_log_level();
 
     void debug(const std::string &message, const std::string &source = "", bool flush_ = true);
     void info(const std::string &message, const std::string &source = "", bool flush_ = true);

@@ -1,19 +1,19 @@
 #include <logcoe.hpp>
 #include <gtest/gtest.h>
+#include <chrono>
 #include <filesystem>
-#include <fstream>
 #include <sstream>
 #include <string>
 
 class LogcoeStripTest : public ::testing::Test
 {
 protected:
-    std::stringstream testStream;
-    std::string testFilename;
+    std::stringstream m_test_stream;
+    std::string m_test_filename;
 
     void SetUp() override
     {
-        testFilename =
+        m_test_filename =
             "test_logfile_" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) + ".log";
         while (logcoe::is_initialized())
         {
@@ -27,7 +27,7 @@ protected:
         {
             logcoe::shutdown();
         }
-        if (std::filesystem::exists(testFilename)) std::filesystem::remove(testFilename);
+        if (std::filesystem::exists(m_test_filename)) std::filesystem::remove(m_test_filename);
     }
 };
 
@@ -52,7 +52,7 @@ TEST_F(LogcoeStripTest, InitializeAndStateQueries)
 TEST_F(LogcoeStripTest, ConsoleOutput)
 {
     logcoe::initialize();
-    logcoe::set_console_output(testStream);
+    logcoe::set_console_output(m_test_stream);
 
     {
         logcoe::debug("Debug message");
@@ -60,12 +60,12 @@ TEST_F(LogcoeStripTest, ConsoleOutput)
         logcoe::warning("Warning message");
         logcoe::error("Error message");
 
-        EXPECT_TRUE(testStream.str().empty());
+        EXPECT_TRUE(m_test_stream.str().empty());
     }
 
     {
         logcoe::disable_console_output();
-        EXPECT_TRUE(testStream.str().empty());
+        EXPECT_TRUE(m_test_stream.str().empty());
     }
 }
 
@@ -74,17 +74,17 @@ TEST_F(LogcoeStripTest, FileOutput)
     logcoe::initialize();
 
     {
-        auto result = logcoe::set_file_output(testFilename);
+        auto result = logcoe::set_file_output(m_test_filename);
         EXPECT_TRUE(result.has_value());
     }
 
     {
-        EXPECT_FALSE(std::filesystem::exists(testFilename));
+        EXPECT_FALSE(std::filesystem::exists(m_test_filename));
     }
 
     {
         logcoe::disable_file_output();
-        EXPECT_FALSE(std::filesystem::exists(testFilename));
+        EXPECT_FALSE(std::filesystem::exists(m_test_filename));
     }
 }
 
@@ -116,9 +116,9 @@ TEST_F(LogcoeStripTest, Lifecycle)
     {
         logcoe::initialize();
         logcoe::shutdown();
-        logcoe::initialize(logcoe::log_level::debug, "", true, true, testFilename);
+        logcoe::initialize(logcoe::log_level::debug, "", true, true, m_test_filename);
         logcoe::shutdown();
 
-        EXPECT_FALSE(std::filesystem::exists(testFilename));
+        EXPECT_FALSE(std::filesystem::exists(m_test_filename));
     }
 }

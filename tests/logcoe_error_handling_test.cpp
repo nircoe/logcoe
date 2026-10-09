@@ -7,11 +7,11 @@
 class LogcoeErrorHandlingTest : public ::testing::Test
 {
 protected:
-    std::string testFilename;
+    std::string m_test_filename;
 
     void SetUp() override
     {
-        testFilename =
+        m_test_filename =
             "test_logfile_" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) + ".log";
 
         while (logcoe::is_initialized())
@@ -27,7 +27,7 @@ protected:
             logcoe::shutdown();
         }
 
-        if (std::filesystem::exists(testFilename)) std::filesystem::remove(testFilename);
+        if (std::filesystem::exists(m_test_filename)) std::filesystem::remove(m_test_filename);
     }
 };
 
@@ -35,31 +35,31 @@ TEST_F(LogcoeErrorHandlingTest, SetFileOutputSuccess)
 {
     logcoe::initialize();
 
-    auto result = logcoe::set_file_output(testFilename);
+    auto result = logcoe::set_file_output(m_test_filename);
 
     EXPECT_TRUE(result.has_value());
-    EXPECT_TRUE(std::filesystem::exists(testFilename));
+    EXPECT_TRUE(std::filesystem::exists(m_test_filename));
 }
 
 TEST_F(LogcoeErrorHandlingTest, SetFileOutputFailure)
 {
     logcoe::initialize();
 
-    std::string badPath = "nonexistent_dir/" + testFilename;
-    auto result = logcoe::set_file_output(badPath);
+    std::string bad_path = "nonexistent_dir/" + m_test_filename;
+    auto result = logcoe::set_file_output(bad_path);
 
     EXPECT_FALSE(result.has_value());
     EXPECT_EQ(result.error(), logcoe::error_reason::file_open_failure);
-    EXPECT_FALSE(std::filesystem::exists(badPath));
+    EXPECT_FALSE(std::filesystem::exists(bad_path));
 }
 
 TEST_F(LogcoeErrorHandlingTest, SetFileOutputNotInitialized)
 {
-    auto result = logcoe::set_file_output(testFilename);
+    auto result = logcoe::set_file_output(m_test_filename);
 
     EXPECT_FALSE(result.has_value());
     EXPECT_EQ(result.error(), logcoe::error_reason::not_initialized);
-    EXPECT_FALSE(std::filesystem::exists(testFilename));
+    EXPECT_FALSE(std::filesystem::exists(m_test_filename));
 }
 
 TEST_F(LogcoeErrorHandlingTest, SetTimeFormatSuccess)

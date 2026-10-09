@@ -1,9 +1,9 @@
 function(logcoe_ignore_external_warnings target_name)
     if(TARGET ${target_name})
-        get_target_property(INCLUDE_DIRS ${target_name} INTERFACE_INCLUDE_DIRECTORIES)
-        if(INCLUDE_DIRS)
+        get_target_property(include_dirs ${target_name} INTERFACE_INCLUDE_DIRECTORIES)
+        if(include_dirs)
             set_target_properties(${target_name} PROPERTIES
-                INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${INCLUDE_DIRS}"
+                INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${include_dirs}"
             )
             message(STATUS "[logcoe] Ignoring ${target_name} warnings")
         endif()
