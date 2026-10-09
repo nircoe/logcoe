@@ -37,6 +37,7 @@ There are two executables:
 
 ```
 logcoe/
+├── .clang-format                      # Formatting rules
 ├── cmake/
 │   ├── logcoe_config.cmake            # Includes the other cmake files
 │   ├── testcoe.cmake                  # Fetches testcoe from source
@@ -74,7 +75,11 @@ CI does not run sanitizers or benchmarks.
 
 ### Code Style
 - `snake_case` for functions, variables, types, and enumerators
-- `g_` prefix for anonymous-namespace variables
+- `g_` prefix for anonymous-namespace variables, `m_` prefix for class members
+- Allman braces (opening brace on its own line), 4-space indent
+- Includes in one block: `<logcoe.hpp>` first, then third-party (`<gtest/gtest.h>`), then std
+- `.clang-format` encodes the formatting rules. Run `git clang-format` before committing, it formats only the lines
+  you changed
 - Trailing underscore for a parameter that would shadow another identifier in scope
   (a `flush` parameter becomes `flush_` so it does not shadow the `flush()` function)
 - Lines under 120 characters
