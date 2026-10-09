@@ -4,14 +4,17 @@
 #include <filesystem>
 #include <fstream>
 #include <regex>
+#include <set>
 #include <sstream>
 #include <string>
+#include <system_error>
 
 class LogcoeTest : public ::testing::Test
 {
 protected:
     std::stringstream m_test_stream;
     std::string m_test_filename;
+    std::set<std::string> m_existing_default_logs;
 
     void SetUp() override
     {
@@ -22,6 +25,8 @@ protected:
         {
             logcoe::shutdown();
         }
+
+        m_existing_default_logs = list_default_logs();
     }
 
     void TearDown() override
@@ -32,6 +37,48 @@ protected:
         }
 
         if (std::filesystem::exists(m_test_filename)) std::filesystem::remove(m_test_filename);
+
+        std::error_code ec;
+        for (const auto &name : created_default_logs())
+            std::filesystem::remove_all(name, ec);
+    }
+
+    std::set<std::string> list_default_logs()
+    {
+        std::set<std::string> names;
+        std::error_code ec;
+        for (const auto &entry : std::filesystem::directory_iterator(".", ec))
+        {
+            const std::string name = entry.path().filename().string();
+            if (name.starts_with("logcoe_")) names.insert(name);
+        }
+        return names;
+    }
+
+    void use_default_time_format()
+    {
+        logcoe::initialize();
+        [[maybe_unused]] const auto result = logcoe::set_time_format("%d/%m/%Y__%H:%M:%S");
+        logcoe::shutdown();
+    }
+
+    std::set<std::string> created_default_logs()
+    {
+        std::set<std::string> created;
+        for (const auto &name : list_default_logs())
+            if (!m_existing_default_logs.contains(name)) created.insert(name);
+        return created;
+    }
+
+    void expect_default_logs_are_plain_files()
+    {
+        const auto created = created_default_logs();
+        EXPECT_FALSE(created.empty());
+        for (const auto &name : created)
+        {
+            EXPECT_TRUE(std::filesystem::is_regular_file(name)) << name;
+            EXPECT_EQ(name.find_first_of("/:"), std::string::npos) << name;
+        }
     }
 
     std::string read_log_file(const std::string &filename)
@@ -199,4 +246,22 @@ TEST_F(LogcoeTest, TimeFormat)
     std::string output = m_test_stream.str();
     std::regex time_pattern("\\[\\d{2}:\\d{2}:\\d{2}\\]");
     EXPECT_TRUE(std::regex_search(output, time_pattern));
+}
+
+TEST_F(LogcoeTest, DefaultFilenameInitialize)
+{
+    use_default_time_format();
+    logcoe::initialize(logcoe::log_level::debug, "", true, true);
+
+    expect_default_logs_are_plain_files();
+}
+
+TEST_F(LogcoeTest, DefaultFilenameSetFileOutput)
+{
+    use_default_time_format();
+    logcoe::initialize();
+
+    EXPECT_TRUE(logcoe::set_file_output("").has_value());
+
+    expect_default_logs_are_plain_files();
 }

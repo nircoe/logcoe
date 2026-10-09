@@ -169,7 +169,7 @@ std::tm tm_now;
 - Paths are handled with `std::filesystem`
 - `initialize` creates missing parent directories and deletes an existing file at the path
 - `set_file_output` opens the file for writing, which truncates an existing file
-- With the default filename `logcoe.log`, `initialize` uses `logcoe_<timestamp>.log` instead
+- With the default filename `logcoe.log`, `initialize` uses `logcoe_<timestamp>.log` instead (`/` to `-`, `:` to `_`)
 - File permissions are the OS defaults
 
 ### Build System Integration

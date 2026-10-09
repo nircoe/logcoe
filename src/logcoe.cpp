@@ -1,4 +1,5 @@
 #include <logcoe.hpp>
+#include <algorithm>
 #include <chrono>
 #include <cstddef>
 #include <ctime>
@@ -47,6 +48,15 @@ namespace
             std::strftime(buffer, sizeof(buffer), g_time_format.c_str(), &tm_now);
 
             return std::string(buffer);
+        }
+
+        std::string get_default_filename()
+        {
+            std::string timestamp = get_current_timestamp();
+            std::ranges::replace(timestamp, '/', '-');
+            std::ranges::replace(timestamp, ':', '_');
+
+            return "logcoe_" + timestamp + ".log";
         }
 
         std::string get_log_level_as_string(log_level level)
@@ -128,7 +138,7 @@ namespace
 
             if (filename != g_filename) g_filename = filename;
 
-            if (g_filename == "logcoe.log") g_filename = "logcoe_" + get_current_timestamp() + ".log";
+            if (g_filename == "logcoe.log") g_filename = get_default_filename();
 
             if (g_use_file && !filename.empty())
             {
@@ -210,7 +220,7 @@ namespace
                 g_file_stream.close();
             }
 
-            g_filename = filename.empty() ? "logcoe_" + get_current_timestamp() + ".log" : filename;
+            g_filename = filename.empty() ? get_default_filename() : filename;
             g_use_file = true;
 
             g_file_stream.open(g_filename);
