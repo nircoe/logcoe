@@ -1,5 +1,4 @@
 #include <logcoe.hpp>
-#include <algorithm>
 #include <chrono>
 #include <cstddef>
 #include <ctime>
@@ -30,10 +29,8 @@ namespace
     namespace internal
     {
 
-        std::string get_current_timestamp()
+        std::string format_time(const std::string &format)
         {
-            if (g_init_counter == 0) return "";
-
             auto now = std::chrono::system_clock::now();
             std::time_t time_t_now = std::chrono::system_clock::to_time_t(now);
 
@@ -45,19 +42,19 @@ namespace
     #endif
 
             char buffer[256];
-            std::strftime(buffer, sizeof(buffer), g_time_format.c_str(), &tm_now);
+            std::strftime(buffer, sizeof(buffer), format.c_str(), &tm_now);
 
             return std::string(buffer);
         }
 
-        std::string get_default_filename()
+        std::string get_current_timestamp()
         {
-            std::string timestamp = get_current_timestamp();
-            std::ranges::replace(timestamp, '/', '-');
-            std::ranges::replace(timestamp, ':', '_');
+            if (g_init_counter == 0) return "";
 
-            return "logcoe_" + timestamp + ".log";
+            return format_time(g_time_format);
         }
+
+        std::string get_default_filename() { return "logcoe_" + format_time("%Y-%m-%d_%H-%M-%S") + ".log"; }
 
         std::string get_log_level_as_string(log_level level)
         {
@@ -76,7 +73,7 @@ namespace
                 case log_level::none:
                     return "NONE";
             }
-            std::unreachable();
+            return "NONE";
         }
 
         void write_to_outputs(const std::string &formatted_message,

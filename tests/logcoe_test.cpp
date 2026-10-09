@@ -55,13 +55,6 @@ protected:
         return names;
     }
 
-    void use_default_time_format()
-    {
-        logcoe::initialize();
-        [[maybe_unused]] const auto result = logcoe::set_time_format("%d/%m/%Y__%H:%M:%S");
-        logcoe::shutdown();
-    }
-
     std::set<std::string> created_default_logs()
     {
         std::set<std::string> created;
@@ -74,10 +67,11 @@ protected:
     {
         const auto created = created_default_logs();
         EXPECT_FALSE(created.empty());
+        const std::regex shape("logcoe_\\d{4}-\\d{2}-\\d{2}_\\d{2}-\\d{2}-\\d{2}\\.log");
         for (const auto &name : created)
         {
             EXPECT_TRUE(std::filesystem::is_regular_file(name)) << name;
-            EXPECT_EQ(name.find_first_of("/:"), std::string::npos) << name;
+            EXPECT_TRUE(std::regex_match(name, shape)) << name;
         }
     }
 
@@ -250,7 +244,6 @@ TEST_F(LogcoeTest, TimeFormat)
 
 TEST_F(LogcoeTest, DefaultFilenameInitialize)
 {
-    use_default_time_format();
     logcoe::initialize(logcoe::log_level::debug, "", true, true);
 
     expect_default_logs_are_plain_files();
@@ -258,10 +251,34 @@ TEST_F(LogcoeTest, DefaultFilenameInitialize)
 
 TEST_F(LogcoeTest, DefaultFilenameSetFileOutput)
 {
-    use_default_time_format();
     logcoe::initialize();
 
     EXPECT_TRUE(logcoe::set_file_output("").has_value());
 
     expect_default_logs_are_plain_files();
+}
+
+TEST_F(LogcoeTest, DefaultFilenameIgnoresTimeFormat)
+{
+    logcoe::initialize();
+    EXPECT_TRUE(logcoe::set_time_format("%H:%M:%S").has_value());
+
+    EXPECT_TRUE(logcoe::set_file_output("").has_value());
+
+    expect_default_logs_are_plain_files();
+}
+
+TEST_F(LogcoeTest, OutOfRangeLogLevel)
+{
+    logcoe::initialize(static_cast<logcoe::log_level>(7));
+    EXPECT_TRUE(logcoe::is_initialized());
+
+    logcoe::set_console_output(m_test_stream);
+    logcoe::set_log_level(logcoe::log_level::info);
+    logcoe::info("After out of range level");
+
+    EXPECT_TRUE(matches_log_pattern(m_test_stream.str(), logcoe::log_level::info, "After out of range level"));
+
+    logcoe::shutdown();
+    EXPECT_FALSE(logcoe::is_initialized());
 }
