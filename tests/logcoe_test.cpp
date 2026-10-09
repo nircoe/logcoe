@@ -1,10 +1,10 @@
-#include <gtest/gtest.h>
 #include <logcoe.hpp>
-#include <fstream>
-#include <sstream>
+#include <gtest/gtest.h>
 #include <filesystem>
-#include <string>
+#include <fstream>
 #include <regex>
+#include <sstream>
+#include <string>
 
 class LogcoeTest : public ::testing::Test
 {
@@ -14,32 +14,39 @@ protected:
 
     void SetUp() override
     {
-        testFilename = "test_logfile_" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) + ".log";
+        testFilename =
+            "test_logfile_" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) + ".log";
 
-        while(logcoe::is_initialized()) { logcoe::shutdown(); }
+        while (logcoe::is_initialized())
+        {
+            logcoe::shutdown();
+        }
     }
 
     void TearDown() override
     {
-        while(logcoe::is_initialized()) { logcoe::shutdown(); }
+        while (logcoe::is_initialized())
+        {
+            logcoe::shutdown();
+        }
 
-        if (std::filesystem::exists(testFilename))
-            std::filesystem::remove(testFilename);
+        if (std::filesystem::exists(testFilename)) std::filesystem::remove(testFilename);
     }
 
     std::string readLogFile(const std::string &filename)
     {
         std::ifstream file(filename);
-        if (!file.is_open())
-            return "";
+        if (!file.is_open()) return "";
 
         std::stringstream buffer;
         buffer << file.rdbuf();
         return buffer.str();
     }
 
-    bool matchesLogPattern(const std::string &text, logcoe::log_level level,
-                           const std::string &message, const std::string &source = "")
+    bool matchesLogPattern(const std::string &text,
+                           logcoe::log_level level,
+                           const std::string &message,
+                           const std::string &source = "")
     {
         std::string levelStr;
         switch (level)
@@ -63,8 +70,7 @@ protected:
 
         std::string pattern = "\\[.*?\\] \\[" + levelStr + "\\]";
 
-        if (!source.empty())
-            pattern += " \\[" + source + "\\]";
+        if (!source.empty()) pattern += " \\[" + source + "\\]";
 
         pattern += ": " + message;
 

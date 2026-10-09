@@ -1,9 +1,8 @@
-#include <gtest/gtest.h>
 #include <logcoe.hpp>
-
+#include <gtest/gtest.h>
+#include <chrono>
 #include <filesystem>
 #include <string>
-#include <chrono>
 
 class LogcoeErrorHandlingTest : public ::testing::Test
 {
@@ -12,18 +11,23 @@ protected:
 
     void SetUp() override
     {
-        testFilename = "test_logfile_" +
-                       std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) + ".log";
+        testFilename =
+            "test_logfile_" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) + ".log";
 
-        while (logcoe::is_initialized()) { logcoe::shutdown(); }
+        while (logcoe::is_initialized())
+        {
+            logcoe::shutdown();
+        }
     }
 
     void TearDown() override
     {
-        while (logcoe::is_initialized()) { logcoe::shutdown(); }
+        while (logcoe::is_initialized())
+        {
+            logcoe::shutdown();
+        }
 
-        if (std::filesystem::exists(testFilename))
-            std::filesystem::remove(testFilename);
+        if (std::filesystem::exists(testFilename)) std::filesystem::remove(testFilename);
     }
 };
 

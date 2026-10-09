@@ -1,8 +1,8 @@
 #pragma once
 
-#include <string>
 #include <expected>
 #include <iosfwd>
+#include <string>
 
 namespace logcoe
 {

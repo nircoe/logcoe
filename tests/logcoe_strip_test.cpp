@@ -1,8 +1,8 @@
-#include <gtest/gtest.h>
 #include <logcoe.hpp>
+#include <gtest/gtest.h>
+#include <filesystem>
 #include <fstream>
 #include <sstream>
-#include <filesystem>
 #include <string>
 
 class LogcoeStripTest : public ::testing::Test
@@ -13,15 +13,21 @@ protected:
 
     void SetUp() override
     {
-        testFilename = "test_logfile_" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) + ".log";
-        while(logcoe::is_initialized()) { logcoe::shutdown(); }
+        testFilename =
+            "test_logfile_" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) + ".log";
+        while (logcoe::is_initialized())
+        {
+            logcoe::shutdown();
+        }
     }
 
     void TearDown() override
     {
-        while(logcoe::is_initialized()) { logcoe::shutdown(); }
-        if (std::filesystem::exists(testFilename))
-            std::filesystem::remove(testFilename);
+        while (logcoe::is_initialized())
+        {
+            logcoe::shutdown();
+        }
+        if (std::filesystem::exists(testFilename)) std::filesystem::remove(testFilename);
     }
 };
 
