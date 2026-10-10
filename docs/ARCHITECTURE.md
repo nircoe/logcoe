@@ -55,10 +55,10 @@ std::mutex g_mutex;
 
 #### State Management
 ```cpp
-log_level   g_log_level;
-bool        g_use_file;
-bool        g_use_console;
-std::string g_time_format;
+log_level g_log_level = log_level::info;
+bool g_use_file = false;
+bool g_use_console = true;
+std::string g_time_format = "%d/%m/%Y__%H:%M:%S";
 ```
 - Current logger configuration, can be changed at runtime
 - The block above is partial. `g_init_counter` (`unsigned int`) counts `initialize` calls and
@@ -66,9 +66,9 @@ std::string g_time_format;
 
 #### Output Stream Management
 ```cpp
-std::string     g_filename;
-std::ofstream   g_file_stream;
-std::ostream*   g_console_stream;
+std::string g_filename = "logcoe.log";
+std::ofstream g_file_stream;
+std::ostream *g_console_stream = &std::cout;
 ```
 - File output: the `std::ofstream` is opened and closed by `initialize`, `set_file_output`, `disable_file_output` and
   `shutdown`
@@ -89,9 +89,9 @@ Acquire mutex lock
     ↓
 Set configuration parameters
     ↓
-Open file stream (if enabled)
-    ↓
 Set console stream pointer
+    ↓
+Open file stream (if enabled)
     ↓
 Write initialization message
     ↓
@@ -169,7 +169,9 @@ std::tm tm_now;
 - Paths are handled with `std::filesystem`
 - `initialize` creates missing parent directories and deletes an existing file at the path
 - `set_file_output` opens the file for writing, which truncates an existing file
-- With the default filename `logcoe.log`, `initialize` uses `logcoe_<timestamp>.log` instead
+- With the default filename `logcoe.log`, `initialize` uses a timestamped name like `logcoe_2026-10-09_14-30-00.log`
+- `set_file_output("")` does the same
+- The timestamped name does not depend on `set_time_format`
 - File permissions are the OS defaults
 
 ### Build System Integration
@@ -210,8 +212,7 @@ debug (0) < info (1) < warning (2) < error (3) < none (4)
 ```
 
 ```cpp
-if (static_cast<int>(level) < static_cast<int>(g_log_level))
-    return;
+if (g_init_counter == 0 || std::to_underlying(level) < std::to_underlying(g_log_level)) return;
 ```
 
 - Levels are compared as integers

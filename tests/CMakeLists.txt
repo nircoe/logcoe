@@ -1,6 +1,11 @@
 logcoe_ignore_external_warnings(testcoe)
 
-add_executable(logcoe_tests main.cpp logcoe_test.cpp logcoe_thread_test.cpp logcoe_error_handling_test.cpp)
+add_executable(logcoe_tests
+    main.cpp
+    logcoe_test.cpp
+    logcoe_thread_test.cpp
+    logcoe_error_handling_test.cpp
+)
 
 target_link_libraries(logcoe_tests
     PRIVATE
@@ -17,7 +22,10 @@ add_custom_target(run_logcoe_tests
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-add_executable(logcoe_strip_tests main.cpp logcoe_strip_test.cpp)
+add_executable(logcoe_strip_tests
+    main.cpp
+    logcoe_strip_test.cpp
+)
 
 target_link_libraries(logcoe_strip_tests
     PRIVATE

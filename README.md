@@ -43,15 +43,16 @@ target_link_libraries(your_target PRIVATE logcoe)
 ```cpp
 #include <logcoe.hpp>
 
-int main() {
+int main()
+{
     // Initialize with INFO level, no default source (empty string), console enabled, file disabled
     // logs will be printed as [timestamp] [log_level]: <log_message>
     logcoe::initialize(logcoe::log_level::info, std::string{}, true, false);
-    
+
     logcoe::info("Application started");
     logcoe::warning("This is a warning message");
     logcoe::error("Critical error occurred", "ErrorHandler");
-    
+
     logcoe::shutdown();
     return 0;
 }
@@ -63,26 +64,27 @@ int main() {
 #include <logcoe.hpp>
 #include <fstream>
 
-int main() {
+int main()
+{
     // Enable both console and file output with DEBUG level and default source as logcoe
     // logs will be printed as [timestamp] [log_level] [logcoe]: <log_message>
     logcoe::initialize(logcoe::log_level::debug, "logcoe", true, true, "app.log");
-    
+
     // Customize time format
     if (!logcoe::set_time_format("%H:%M:%S"))
         return 1;
-    
+
     // Log with source information
     logcoe::debug("Debugging network connection", "NetworkModule");
     logcoe::info("User logged in successfully", "AuthSystem");
-    
+
     // Redirect console to custom stream
-    std::ofstream customLog("custom.log");
-    logcoe::set_console_output(customLog);
-    
+    std::ofstream custom_log("custom.log");
+    logcoe::set_console_output(custom_log);
+
     // Change log level at runtime
     logcoe::set_log_level(logcoe::log_level::warning);
-    
+
     logcoe::shutdown();
     return 0;
 }
@@ -107,7 +109,8 @@ All functions are declared in `include/logcoe.hpp`, with their default arguments
 - The logging functions and the setters do nothing before `initialize`.
 - The logging functions take an optional `source` and a `flush` flag (default `true`).
   `logcoe::flush()` flushes the console and file outputs.
-- `set_file_output` and `set_time_format` return `std::expected<void, logcoe::error_reason>` and are `[[nodiscard]]`.
+- `set_file_output` and `set_time_format` return `std::expected<void, logcoe::error_reason>`.
+- `set_file_output`, `set_time_format`, `is_initialized` and `get_log_level` are `[[nodiscard]]`.
 - `error_reason` is `file_open_failure`, `invalid_time_format` or `not_initialized`.
   Both functions return `not_initialized` when called before `initialize`.
 - Time formats use `strftime` syntax.

@@ -1,0 +1,26 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+UseTab: Never
+ColumnLimit: 120
+BreakBeforeBraces: Allman
+AccessModifierOffset: -4
+LambdaBodyIndentation: OuterScope
+PointerAlignment: Right
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyBlock: true
+AllowShortIfStatementsOnASingleLine: WithoutElse
+NamespaceIndentation: All
+FixNamespaceComments: true
+IndentCaseLabels: true
+IndentPPDirectives: BeforeHash
+InsertNewlineAtEOF: true
+BinPackParameters: false
+PenaltyReturnTypeOnItsOwnLine: 1000
+IncludeBlocks: Merge
+IncludeCategories:
+  - Regex: '^<logcoe\.hpp>$'
+    Priority: 1
+  - Regex: '^<[^>]+\.(h|hpp)>$'
+    Priority: 2
+  - Regex: '^<[^>.]+>$'
+    Priority: 3
