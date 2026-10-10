@@ -250,5 +250,3 @@ if (g_init_counter == 0 || std::to_underlying(level) < std::to_underlying(g_log_
 ## Performance Characteristics
 
 - One global mutex serializes all calls, and formatting and I/O run under it
-- Each message is written with `std::endl`, which flushes the stream, so the `flush` argument currently adds
-  nothing
