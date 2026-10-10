@@ -84,13 +84,13 @@ namespace
 
             if (g_use_console && g_console_stream)
             {
-                *g_console_stream << formatted_message << std::endl;
+                *g_console_stream << formatted_message << '\n';
                 if (flush_) g_console_stream->flush();
             }
 
             if (g_use_file)
             {
-                g_file_stream << formatted_message << std::endl;
+                g_file_stream << formatted_message << '\n';
                 if (flush_) g_file_stream.flush();
             }
         }
