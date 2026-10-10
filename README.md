@@ -108,6 +108,7 @@ All functions are declared in `include/logcoe.hpp`, with their default arguments
   Logging stops after the matching number of `shutdown` calls.
 - The logging functions and the setters do nothing before `initialize`.
 - The logging functions take an optional `source` and a `flush` flag (default `true`).
+  A message logged with `flush==false` may stay in the stream buffer until the next `logcoe::flush()` or `shutdown()`.
   `logcoe::flush()` flushes the console and file outputs.
 - `set_file_output` and `set_time_format` return `std::expected<void, logcoe::error_reason>`.
 - `set_file_output`, `set_time_format`, `is_initialized` and `get_log_level` are `[[nodiscard]]`.

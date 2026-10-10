@@ -3,11 +3,33 @@
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <ostream>
 #include <regex>
 #include <set>
 #include <sstream>
+#include <streambuf>
 #include <string>
 #include <system_error>
+
+namespace
+{
+    class sync_counting_buf : public std::streambuf
+    {
+        int m_sync_count = 0;
+
+    public:
+        int sync_count() const { return m_sync_count; }
+        void reset() { m_sync_count = 0; }
+
+    protected:
+        int_type overflow(int_type ch) override { return traits_type::not_eof(ch); }
+        int sync() override
+        {
+            ++m_sync_count;
+            return 0;
+        }
+    };
+} // namespace
 
 class LogcoeTest : public ::testing::Test
 {
@@ -182,6 +204,52 @@ TEST_F(LogcoeTest, ConsoleRedirection)
 
     std::string output = m_test_stream.str();
     EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::info, "Test message"));
+}
+
+TEST_F(LogcoeTest, FlushFalseDoesNotFlushConsole)
+{
+    logcoe::initialize(logcoe::log_level::debug);
+    sync_counting_buf buf;
+    std::ostream stream(&buf);
+    logcoe::set_console_output(stream);
+    buf.reset();
+
+    logcoe::debug("m", "", false);
+    logcoe::info("m", "", false);
+    logcoe::warning("m", "", false);
+    logcoe::error("m", "", false);
+    EXPECT_EQ(buf.sync_count(), 0);
+
+    logcoe::flush();
+    EXPECT_EQ(buf.sync_count(), 1);
+
+    logcoe::disable_console_output();
+}
+
+TEST_F(LogcoeTest, FlushTrueFlushesConsole)
+{
+    logcoe::initialize(logcoe::log_level::debug);
+    sync_counting_buf buf;
+    std::ostream stream(&buf);
+    logcoe::set_console_output(stream);
+
+    buf.reset();
+    logcoe::debug("m", "", true);
+    EXPECT_EQ(buf.sync_count(), 1);
+
+    buf.reset();
+    logcoe::info("m", "", true);
+    EXPECT_EQ(buf.sync_count(), 1);
+
+    buf.reset();
+    logcoe::warning("m", "", true);
+    EXPECT_EQ(buf.sync_count(), 1);
+
+    buf.reset();
+    logcoe::error("m", "", true);
+    EXPECT_EQ(buf.sync_count(), 1);
+
+    logcoe::disable_console_output();
 }
 
 TEST_F(LogcoeTest, FileOutput)
