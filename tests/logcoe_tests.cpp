@@ -11,6 +11,10 @@
 #include <string>
 #include <system_error>
 
+//==============================================================================
+//                        Test Helpers
+//==============================================================================
+
 namespace
 {
     class sync_counting_buf : public std::streambuf
@@ -30,6 +34,10 @@ namespace
         }
     };
 } // namespace
+
+//==============================================================================
+//                    LogcoeTests - Functional behavior
+//==============================================================================
 
 class LogcoeTests : public ::testing::Test
 {
@@ -60,9 +68,7 @@ protected:
 
         if (std::filesystem::exists(m_test_filename)) std::filesystem::remove(m_test_filename);
 
-        std::error_code ec;
-        for (const auto &name : created_default_logs())
-            std::filesystem::remove_all(name, ec);
+        remove_created_default_logs();
     }
 
     std::set<std::string> list_default_logs()
@@ -83,6 +89,13 @@ protected:
         for (const auto &name : list_default_logs())
             if (!m_existing_default_logs.contains(name)) created.insert(name);
         return created;
+    }
+
+    void remove_created_default_logs()
+    {
+        std::error_code ec;
+        for (const auto &name : created_default_logs())
+            std::filesystem::remove_all(name, ec);
     }
 
     void expect_default_logs_are_plain_files()
@@ -143,210 +156,279 @@ protected:
     }
 };
 
-TEST_F(LogcoeTests, DefaultInitialization)
+//==============================================================================
+//                        Initialization
+//==============================================================================
+
+TEST_F(LogcoeTests, Initialization)
 {
-    logcoe::initialize();
+    // Test 1: default initialization
+    {
+        logcoe::initialize();
 
-    EXPECT_EQ(logcoe::get_log_level(), logcoe::log_level::debug);
+        EXPECT_EQ(logcoe::get_log_level(), logcoe::log_level::debug);
 
-    logcoe::info("Test info message");
+        logcoe::info("Test info message");
+
+        logcoe::shutdown();
+    }
+
+    // Test 2: custom initialization with a file
+    {
+        logcoe::initialize(logcoe::log_level::info, "", true, true, m_test_filename);
+
+        EXPECT_EQ(logcoe::get_log_level(), logcoe::log_level::info);
+
+        logcoe::info("Test debug message");
+
+        EXPECT_TRUE(std::filesystem::exists(m_test_filename));
+
+        std::string file_content = read_log_file(m_test_filename);
+        EXPECT_TRUE(matches_log_pattern(file_content, logcoe::log_level::info, "Test debug message"));
+
+        logcoe::shutdown();
+    }
+
+    // Test 3: out of range log level
+    {
+        logcoe::initialize(static_cast<logcoe::log_level>(7));
+        EXPECT_TRUE(logcoe::is_initialized());
+
+        logcoe::set_console_output(m_test_stream);
+        logcoe::set_log_level(logcoe::log_level::info);
+        logcoe::info("After out of range level");
+
+        EXPECT_TRUE(matches_log_pattern(m_test_stream.str(), logcoe::log_level::info, "After out of range level"));
+
+        logcoe::shutdown();
+        EXPECT_FALSE(logcoe::is_initialized());
+    }
 }
 
-TEST_F(LogcoeTests, CustomInitialization)
+//==============================================================================
+//                        Log Level
+//==============================================================================
+
+TEST_F(LogcoeTests, LogLevel)
 {
-    logcoe::initialize(logcoe::log_level::info, "", true, true, m_test_filename);
+    // Test 1: messages below the level are filtered
+    {
+        logcoe::initialize(logcoe::log_level::warning);
+        logcoe::set_console_output(m_test_stream);
 
-    EXPECT_EQ(logcoe::get_log_level(), logcoe::log_level::info);
+        logcoe::debug("Debug message");
+        logcoe::info("Info message");
 
-    logcoe::info("Test debug message");
+        logcoe::warning("Warning message");
+        logcoe::error("Error message");
 
-    EXPECT_TRUE(std::filesystem::exists(m_test_filename));
+        std::string output = m_test_stream.str();
 
-    std::string file_content = read_log_file(m_test_filename);
-    EXPECT_TRUE(matches_log_pattern(file_content, logcoe::log_level::info, "Test debug message"));
+        EXPECT_FALSE(matches_log_pattern(output, logcoe::log_level::debug, "Debug message"));
+        EXPECT_FALSE(matches_log_pattern(output, logcoe::log_level::info, "Info message"));
+
+        EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::warning, "Warning message"));
+        EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::error, "Error message"));
+
+        logcoe::shutdown();
+    }
+
+    // Test 2: set_log_level changes the level
+    {
+        logcoe::initialize(logcoe::log_level::error);
+        EXPECT_EQ(logcoe::get_log_level(), logcoe::log_level::error);
+
+        logcoe::set_log_level(logcoe::log_level::debug);
+        EXPECT_EQ(logcoe::get_log_level(), logcoe::log_level::debug);
+    }
 }
 
-TEST_F(LogcoeTests, LogLevelFiltering)
+//==============================================================================
+//                        Console
+//==============================================================================
+
+TEST_F(LogcoeTests, Console)
 {
-    logcoe::initialize(logcoe::log_level::warning);
-    logcoe::set_console_output(m_test_stream);
+    // Test 1: output goes to the redirected stream
+    {
+        logcoe::initialize();
+        logcoe::set_console_output(m_test_stream);
 
-    logcoe::debug("Debug message");
-    logcoe::info("Info message");
+        logcoe::info("Test message");
 
-    logcoe::warning("Warning message");
-    logcoe::error("Error message");
+        std::string output = m_test_stream.str();
+        EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::info, "Test message"));
 
-    std::string output = m_test_stream.str();
+        logcoe::shutdown();
+    }
 
-    EXPECT_FALSE(matches_log_pattern(output, logcoe::log_level::debug, "Debug message"));
-    EXPECT_FALSE(matches_log_pattern(output, logcoe::log_level::info, "Info message"));
+    // Test 2: disable_console_output stops console output
+    {
+        m_test_stream.str("");
+        logcoe::initialize();
+        logcoe::set_console_output(m_test_stream);
 
-    EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::warning, "Warning message"));
-    EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::error, "Error message"));
+        logcoe::info("Before disable");
+
+        logcoe::disable_console_output();
+        logcoe::info("After disable");
+
+        std::string output = m_test_stream.str();
+        EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::info, "Before disable"));
+        EXPECT_FALSE(matches_log_pattern(output, logcoe::log_level::info, "After disable"));
+
+        logcoe::shutdown();
+    }
+
+    // Test 3: source field appears in the message
+    {
+        m_test_stream.str("");
+        logcoe::initialize();
+        logcoe::set_console_output(m_test_stream);
+
+        logcoe::info("Message with source", "TestSource");
+
+        std::string output = m_test_stream.str();
+        EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::info, "Message with source", "TestSource"));
+    }
 }
 
-TEST_F(LogcoeTests, ChangeLogLevel)
-{
-    logcoe::initialize(logcoe::log_level::error);
-    EXPECT_EQ(logcoe::get_log_level(), logcoe::log_level::error);
+//==============================================================================
+//                        Flush
+//==============================================================================
 
-    logcoe::set_log_level(logcoe::log_level::debug);
-    EXPECT_EQ(logcoe::get_log_level(), logcoe::log_level::debug);
+TEST_F(LogcoeTests, Flush)
+{
+    // Test 1: flush false does not flush the console
+    {
+        logcoe::initialize(logcoe::log_level::debug);
+        sync_counting_buf buf;
+        std::ostream stream(&buf);
+        logcoe::set_console_output(stream);
+        buf.reset();
+
+        logcoe::debug("m", "", false);
+        logcoe::info("m", "", false);
+        logcoe::warning("m", "", false);
+        logcoe::error("m", "", false);
+        EXPECT_EQ(buf.sync_count(), 0);
+
+        logcoe::flush();
+        EXPECT_EQ(buf.sync_count(), 1);
+
+        logcoe::disable_console_output();
+        logcoe::shutdown();
+    }
+
+    // Test 2: flush true flushes the console on every level
+    {
+        logcoe::initialize(logcoe::log_level::debug);
+        sync_counting_buf buf;
+        std::ostream stream(&buf);
+        logcoe::set_console_output(stream);
+
+        buf.reset();
+        logcoe::debug("m", "", true);
+        EXPECT_EQ(buf.sync_count(), 1);
+
+        buf.reset();
+        logcoe::info("m", "", true);
+        EXPECT_EQ(buf.sync_count(), 1);
+
+        buf.reset();
+        logcoe::warning("m", "", true);
+        EXPECT_EQ(buf.sync_count(), 1);
+
+        buf.reset();
+        logcoe::error("m", "", true);
+        EXPECT_EQ(buf.sync_count(), 1);
+
+        logcoe::disable_console_output();
+    }
 }
 
-TEST_F(LogcoeTests, ConsoleRedirection)
-{
-    logcoe::initialize();
-    logcoe::set_console_output(m_test_stream);
-
-    logcoe::info("Test message");
-
-    std::string output = m_test_stream.str();
-    EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::info, "Test message"));
-}
-
-TEST_F(LogcoeTests, FlushFalseDoesNotFlushConsole)
-{
-    logcoe::initialize(logcoe::log_level::debug);
-    sync_counting_buf buf;
-    std::ostream stream(&buf);
-    logcoe::set_console_output(stream);
-    buf.reset();
-
-    logcoe::debug("m", "", false);
-    logcoe::info("m", "", false);
-    logcoe::warning("m", "", false);
-    logcoe::error("m", "", false);
-    EXPECT_EQ(buf.sync_count(), 0);
-
-    logcoe::flush();
-    EXPECT_EQ(buf.sync_count(), 1);
-
-    logcoe::disable_console_output();
-}
-
-TEST_F(LogcoeTests, FlushTrueFlushesConsole)
-{
-    logcoe::initialize(logcoe::log_level::debug);
-    sync_counting_buf buf;
-    std::ostream stream(&buf);
-    logcoe::set_console_output(stream);
-
-    buf.reset();
-    logcoe::debug("m", "", true);
-    EXPECT_EQ(buf.sync_count(), 1);
-
-    buf.reset();
-    logcoe::info("m", "", true);
-    EXPECT_EQ(buf.sync_count(), 1);
-
-    buf.reset();
-    logcoe::warning("m", "", true);
-    EXPECT_EQ(buf.sync_count(), 1);
-
-    buf.reset();
-    logcoe::error("m", "", true);
-    EXPECT_EQ(buf.sync_count(), 1);
-
-    logcoe::disable_console_output();
-}
+//==============================================================================
+//                        File Output
+//==============================================================================
 
 TEST_F(LogcoeTests, FileOutput)
 {
-    logcoe::initialize();
+    // Test 1: file output can be enabled and disabled
+    {
+        logcoe::initialize();
 
-    EXPECT_TRUE(logcoe::set_file_output(m_test_filename).has_value());
+        EXPECT_TRUE(logcoe::set_file_output(m_test_filename).has_value());
 
-    logcoe::info("File test message");
+        logcoe::info("File test message");
 
-    std::string file_content = read_log_file(m_test_filename);
-    EXPECT_TRUE(matches_log_pattern(file_content, logcoe::log_level::info, "File test message"));
+        std::string file_content = read_log_file(m_test_filename);
+        EXPECT_TRUE(matches_log_pattern(file_content, logcoe::log_level::info, "File test message"));
 
-    logcoe::disable_file_output();
-    logcoe::info("This shouldn't be in the file");
+        logcoe::disable_file_output();
+        logcoe::info("This shouldn't be in the file");
 
-    file_content = read_log_file(m_test_filename);
-    EXPECT_FALSE(matches_log_pattern(file_content, logcoe::log_level::info, "This shouldn't be in the file"));
+        file_content = read_log_file(m_test_filename);
+        EXPECT_FALSE(matches_log_pattern(file_content, logcoe::log_level::info, "This shouldn't be in the file"));
+    }
 }
 
-TEST_F(LogcoeTests, DisableConsole)
-{
-    logcoe::initialize();
-    logcoe::set_console_output(m_test_stream);
-
-    logcoe::info("Before disable");
-
-    logcoe::disable_console_output();
-    logcoe::info("After disable");
-
-    std::string output = m_test_stream.str();
-    EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::info, "Before disable"));
-    EXPECT_FALSE(matches_log_pattern(output, logcoe::log_level::info, "After disable"));
-}
-
-TEST_F(LogcoeTests, SourceField)
-{
-    logcoe::initialize();
-    logcoe::set_console_output(m_test_stream);
-
-    logcoe::info("Message with source", "TestSource");
-
-    std::string output = m_test_stream.str();
-    EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::info, "Message with source", "TestSource"));
-}
+//==============================================================================
+//                        Time Format
+//==============================================================================
 
 TEST_F(LogcoeTests, TimeFormat)
 {
-    logcoe::initialize();
-    logcoe::set_console_output(m_test_stream);
+    // Test 1: custom time format is used in the output
+    {
+        logcoe::initialize();
+        logcoe::set_console_output(m_test_stream);
 
-    [[maybe_unused]] const auto result = logcoe::set_time_format("%H:%M:%S");
+        [[maybe_unused]] const auto result = logcoe::set_time_format("%H:%M:%S");
 
-    logcoe::info("Custom time format");
+        logcoe::info("Custom time format");
 
-    std::string output = m_test_stream.str();
-    std::regex time_pattern("\\[\\d{2}:\\d{2}:\\d{2}\\]");
-    EXPECT_TRUE(std::regex_search(output, time_pattern));
+        std::string output = m_test_stream.str();
+        std::regex time_pattern("\\[\\d{2}:\\d{2}:\\d{2}\\]");
+        EXPECT_TRUE(std::regex_search(output, time_pattern));
+    }
 }
 
-TEST_F(LogcoeTests, DefaultFilenameInitialize)
+//==============================================================================
+//                        Default Filename
+//==============================================================================
+
+TEST_F(LogcoeTests, DefaultFilename)
 {
-    logcoe::initialize(logcoe::log_level::debug, "", true, true);
+    // Test 1: initialize with an empty filename
+    {
+        logcoe::initialize(logcoe::log_level::debug, "", true, true);
 
-    expect_default_logs_are_plain_files();
-}
+        expect_default_logs_are_plain_files();
 
-TEST_F(LogcoeTests, DefaultFilenameSetFileOutput)
-{
-    logcoe::initialize();
+        // Close the file before deleting it. A leftover log would let the next block pass without creating its own.
+        logcoe::shutdown();
+        remove_created_default_logs();
+    }
 
-    EXPECT_TRUE(logcoe::set_file_output("").has_value());
+    // Test 2: set_file_output with an empty filename
+    {
+        logcoe::initialize();
 
-    expect_default_logs_are_plain_files();
-}
+        EXPECT_TRUE(logcoe::set_file_output("").has_value());
 
-TEST_F(LogcoeTests, DefaultFilenameIgnoresTimeFormat)
-{
-    logcoe::initialize();
-    EXPECT_TRUE(logcoe::set_time_format("%H:%M:%S").has_value());
+        expect_default_logs_are_plain_files();
 
-    EXPECT_TRUE(logcoe::set_file_output("").has_value());
+        logcoe::shutdown();
+        remove_created_default_logs();
+    }
 
-    expect_default_logs_are_plain_files();
-}
+    // Test 3: default filename ignores the time format
+    {
+        logcoe::initialize();
+        EXPECT_TRUE(logcoe::set_time_format("%H:%M:%S").has_value());
 
-TEST_F(LogcoeTests, OutOfRangeLogLevel)
-{
-    logcoe::initialize(static_cast<logcoe::log_level>(7));
-    EXPECT_TRUE(logcoe::is_initialized());
+        EXPECT_TRUE(logcoe::set_file_output("").has_value());
 
-    logcoe::set_console_output(m_test_stream);
-    logcoe::set_log_level(logcoe::log_level::info);
-    logcoe::info("After out of range level");
-
-    EXPECT_TRUE(matches_log_pattern(m_test_stream.str(), logcoe::log_level::info, "After out of range level"));
-
-    logcoe::shutdown();
-    EXPECT_FALSE(logcoe::is_initialized());
+        expect_default_logs_are_plain_files();
+    }
 }
