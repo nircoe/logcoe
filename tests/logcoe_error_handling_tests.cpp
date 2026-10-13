@@ -4,7 +4,7 @@
 #include <filesystem>
 #include <string>
 
-class LogcoeErrorHandlingTest : public ::testing::Test
+class LogcoeErrorHandlingTests : public ::testing::Test
 {
 protected:
     std::string m_test_filename;
@@ -31,7 +31,7 @@ protected:
     }
 };
 
-TEST_F(LogcoeErrorHandlingTest, SetFileOutputSuccess)
+TEST_F(LogcoeErrorHandlingTests, SetFileOutputSuccess)
 {
     logcoe::initialize();
 
@@ -41,7 +41,7 @@ TEST_F(LogcoeErrorHandlingTest, SetFileOutputSuccess)
     EXPECT_TRUE(std::filesystem::exists(m_test_filename));
 }
 
-TEST_F(LogcoeErrorHandlingTest, SetFileOutputFailure)
+TEST_F(LogcoeErrorHandlingTests, SetFileOutputFailure)
 {
     logcoe::initialize();
 
@@ -53,7 +53,7 @@ TEST_F(LogcoeErrorHandlingTest, SetFileOutputFailure)
     EXPECT_FALSE(std::filesystem::exists(bad_path));
 }
 
-TEST_F(LogcoeErrorHandlingTest, SetFileOutputNotInitialized)
+TEST_F(LogcoeErrorHandlingTests, SetFileOutputNotInitialized)
 {
     auto result = logcoe::set_file_output(m_test_filename);
 
@@ -62,7 +62,7 @@ TEST_F(LogcoeErrorHandlingTest, SetFileOutputNotInitialized)
     EXPECT_FALSE(std::filesystem::exists(m_test_filename));
 }
 
-TEST_F(LogcoeErrorHandlingTest, SetTimeFormatSuccess)
+TEST_F(LogcoeErrorHandlingTests, SetTimeFormatSuccess)
 {
     logcoe::initialize();
 
@@ -71,7 +71,7 @@ TEST_F(LogcoeErrorHandlingTest, SetTimeFormatSuccess)
     EXPECT_TRUE(result.has_value());
 }
 
-TEST_F(LogcoeErrorHandlingTest, SetTimeFormatFailure)
+TEST_F(LogcoeErrorHandlingTests, SetTimeFormatFailure)
 {
     logcoe::initialize();
 
@@ -83,7 +83,7 @@ TEST_F(LogcoeErrorHandlingTest, SetTimeFormatFailure)
     EXPECT_EQ(result.error(), logcoe::error_reason::invalid_time_format);
 }
 
-TEST_F(LogcoeErrorHandlingTest, SetTimeFormatNotInitialized)
+TEST_F(LogcoeErrorHandlingTests, SetTimeFormatNotInitialized)
 {
     auto result = logcoe::set_time_format("%H:%M:%S");
 

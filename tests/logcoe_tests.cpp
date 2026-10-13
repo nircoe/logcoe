@@ -31,7 +31,7 @@ namespace
     };
 } // namespace
 
-class LogcoeTest : public ::testing::Test
+class LogcoeTests : public ::testing::Test
 {
 protected:
     std::stringstream m_test_stream;
@@ -143,7 +143,7 @@ protected:
     }
 };
 
-TEST_F(LogcoeTest, DefaultInitialization)
+TEST_F(LogcoeTests, DefaultInitialization)
 {
     logcoe::initialize();
 
@@ -152,7 +152,7 @@ TEST_F(LogcoeTest, DefaultInitialization)
     logcoe::info("Test info message");
 }
 
-TEST_F(LogcoeTest, CustomInitialization)
+TEST_F(LogcoeTests, CustomInitialization)
 {
     logcoe::initialize(logcoe::log_level::info, "", true, true, m_test_filename);
 
@@ -166,7 +166,7 @@ TEST_F(LogcoeTest, CustomInitialization)
     EXPECT_TRUE(matches_log_pattern(file_content, logcoe::log_level::info, "Test debug message"));
 }
 
-TEST_F(LogcoeTest, LogLevelFiltering)
+TEST_F(LogcoeTests, LogLevelFiltering)
 {
     logcoe::initialize(logcoe::log_level::warning);
     logcoe::set_console_output(m_test_stream);
@@ -186,7 +186,7 @@ TEST_F(LogcoeTest, LogLevelFiltering)
     EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::error, "Error message"));
 }
 
-TEST_F(LogcoeTest, ChangeLogLevel)
+TEST_F(LogcoeTests, ChangeLogLevel)
 {
     logcoe::initialize(logcoe::log_level::error);
     EXPECT_EQ(logcoe::get_log_level(), logcoe::log_level::error);
@@ -195,7 +195,7 @@ TEST_F(LogcoeTest, ChangeLogLevel)
     EXPECT_EQ(logcoe::get_log_level(), logcoe::log_level::debug);
 }
 
-TEST_F(LogcoeTest, ConsoleRedirection)
+TEST_F(LogcoeTests, ConsoleRedirection)
 {
     logcoe::initialize();
     logcoe::set_console_output(m_test_stream);
@@ -206,7 +206,7 @@ TEST_F(LogcoeTest, ConsoleRedirection)
     EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::info, "Test message"));
 }
 
-TEST_F(LogcoeTest, FlushFalseDoesNotFlushConsole)
+TEST_F(LogcoeTests, FlushFalseDoesNotFlushConsole)
 {
     logcoe::initialize(logcoe::log_level::debug);
     sync_counting_buf buf;
@@ -226,7 +226,7 @@ TEST_F(LogcoeTest, FlushFalseDoesNotFlushConsole)
     logcoe::disable_console_output();
 }
 
-TEST_F(LogcoeTest, FlushTrueFlushesConsole)
+TEST_F(LogcoeTests, FlushTrueFlushesConsole)
 {
     logcoe::initialize(logcoe::log_level::debug);
     sync_counting_buf buf;
@@ -252,7 +252,7 @@ TEST_F(LogcoeTest, FlushTrueFlushesConsole)
     logcoe::disable_console_output();
 }
 
-TEST_F(LogcoeTest, FileOutput)
+TEST_F(LogcoeTests, FileOutput)
 {
     logcoe::initialize();
 
@@ -270,7 +270,7 @@ TEST_F(LogcoeTest, FileOutput)
     EXPECT_FALSE(matches_log_pattern(file_content, logcoe::log_level::info, "This shouldn't be in the file"));
 }
 
-TEST_F(LogcoeTest, DisableConsole)
+TEST_F(LogcoeTests, DisableConsole)
 {
     logcoe::initialize();
     logcoe::set_console_output(m_test_stream);
@@ -285,7 +285,7 @@ TEST_F(LogcoeTest, DisableConsole)
     EXPECT_FALSE(matches_log_pattern(output, logcoe::log_level::info, "After disable"));
 }
 
-TEST_F(LogcoeTest, SourceField)
+TEST_F(LogcoeTests, SourceField)
 {
     logcoe::initialize();
     logcoe::set_console_output(m_test_stream);
@@ -296,7 +296,7 @@ TEST_F(LogcoeTest, SourceField)
     EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::info, "Message with source", "TestSource"));
 }
 
-TEST_F(LogcoeTest, TimeFormat)
+TEST_F(LogcoeTests, TimeFormat)
 {
     logcoe::initialize();
     logcoe::set_console_output(m_test_stream);
@@ -310,14 +310,14 @@ TEST_F(LogcoeTest, TimeFormat)
     EXPECT_TRUE(std::regex_search(output, time_pattern));
 }
 
-TEST_F(LogcoeTest, DefaultFilenameInitialize)
+TEST_F(LogcoeTests, DefaultFilenameInitialize)
 {
     logcoe::initialize(logcoe::log_level::debug, "", true, true);
 
     expect_default_logs_are_plain_files();
 }
 
-TEST_F(LogcoeTest, DefaultFilenameSetFileOutput)
+TEST_F(LogcoeTests, DefaultFilenameSetFileOutput)
 {
     logcoe::initialize();
 
@@ -326,7 +326,7 @@ TEST_F(LogcoeTest, DefaultFilenameSetFileOutput)
     expect_default_logs_are_plain_files();
 }
 
-TEST_F(LogcoeTest, DefaultFilenameIgnoresTimeFormat)
+TEST_F(LogcoeTests, DefaultFilenameIgnoresTimeFormat)
 {
     logcoe::initialize();
     EXPECT_TRUE(logcoe::set_time_format("%H:%M:%S").has_value());
@@ -336,7 +336,7 @@ TEST_F(LogcoeTest, DefaultFilenameIgnoresTimeFormat)
     expect_default_logs_are_plain_files();
 }
 
-TEST_F(LogcoeTest, OutOfRangeLogLevel)
+TEST_F(LogcoeTests, OutOfRangeLogLevel)
 {
     logcoe::initialize(static_cast<logcoe::log_level>(7));
     EXPECT_TRUE(logcoe::is_initialized());

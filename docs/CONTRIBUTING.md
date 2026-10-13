@@ -37,24 +37,24 @@ There are two executables:
 
 ```
 logcoe/
-├── .clang-format                      # Formatting rules
+├── .clang-format                       # Formatting rules
 ├── cmake/
-│   ├── logcoe_config.cmake            # Includes the other cmake files
-│   ├── testcoe.cmake                  # Fetches testcoe from source
-│   └── utils.cmake                    # Warning flags, MinGW static runtime, testcoe warning suppression
+│   ├── logcoe_config.cmake             # Includes the other cmake files
+│   ├── testcoe.cmake                   # Fetches testcoe from source
+│   └── utils.cmake                     # Warning flags, MinGW static runtime, testcoe warning suppression
 ├── include/
-│   └── logcoe.hpp                     # Public API header
+│   └── logcoe.hpp                      # Public API header
 ├── src/
-│   └── logcoe.cpp                     # Implementation
+│   └── logcoe.cpp                      # Implementation
 ├── tests/
 │   ├── CMakeLists.txt
-│   ├── main.cpp                       # Test runner
-│   ├── logcoe_test.cpp                # Functional tests
-│   ├── logcoe_thread_test.cpp         # Thread safety tests
-│   ├── logcoe_error_handling_test.cpp # std::expected results of the setters
-│   └── logcoe_strip_test.cpp          # NDEBUG stub tests
-├── docs/                              # Documentation
-└── .github/workflows/                 # CI configuration
+│   ├── main.cpp                        # Test runner
+│   ├── logcoe_tests.cpp                # Functional tests
+│   ├── logcoe_thread_tests.cpp         # Thread safety tests
+│   ├── logcoe_error_handling_tests.cpp # std::expected results of the setters
+│   └── logcoe_strip_tests.cpp          # NDEBUG stub tests
+├── docs/                               # Documentation
+└── .github/workflows/                  # CI configuration
 ```
 
 ## Continuous Integration
@@ -86,9 +86,9 @@ CI does not run sanitizers or benchmarks.
 - Warnings are errors in the library and the tests (`-Werror -Wall -Wextra -Wpedantic`, `/W4 /WX` on MSVC)
 
 ### Testing Guidelines
-- Put functional tests in `logcoe_test.cpp` and concurrency tests in `logcoe_thread_test.cpp`
-- Put tests for `std::expected` results in `logcoe_error_handling_test.cpp`
-- A new public function also needs a case in `logcoe_strip_test.cpp`
+- Put functional tests in `logcoe_tests.cpp` and concurrency tests in `logcoe_thread_tests.cpp`
+- Put tests for `std::expected` results in `logcoe_error_handling_tests.cpp`
+- A new public function also needs a case in `logcoe_strip_tests.cpp`
 
 ### Pull Request Process
 

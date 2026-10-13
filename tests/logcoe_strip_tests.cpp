@@ -5,7 +5,7 @@
 #include <sstream>
 #include <string>
 
-class LogcoeStripTest : public ::testing::Test
+class LogcoeStripTests : public ::testing::Test
 {
 protected:
     std::stringstream m_test_stream;
@@ -31,7 +31,7 @@ protected:
     }
 };
 
-TEST_F(LogcoeStripTest, InitializeAndStateQueries)
+TEST_F(LogcoeStripTests, InitializeAndStateQueries)
 {
     logcoe::initialize(logcoe::log_level::info);
 
@@ -49,7 +49,7 @@ TEST_F(LogcoeStripTest, InitializeAndStateQueries)
     }
 }
 
-TEST_F(LogcoeStripTest, ConsoleOutput)
+TEST_F(LogcoeStripTests, ConsoleOutput)
 {
     logcoe::initialize();
     logcoe::set_console_output(m_test_stream);
@@ -69,7 +69,7 @@ TEST_F(LogcoeStripTest, ConsoleOutput)
     }
 }
 
-TEST_F(LogcoeStripTest, FileOutput)
+TEST_F(LogcoeStripTests, FileOutput)
 {
     logcoe::initialize();
 
@@ -88,7 +88,7 @@ TEST_F(LogcoeStripTest, FileOutput)
     }
 }
 
-TEST_F(LogcoeStripTest, TimeFormat)
+TEST_F(LogcoeStripTests, TimeFormat)
 {
     logcoe::initialize();
 
@@ -103,7 +103,7 @@ TEST_F(LogcoeStripTest, TimeFormat)
     }
 }
 
-TEST_F(LogcoeStripTest, Lifecycle)
+TEST_F(LogcoeStripTests, Lifecycle)
 {
     {
         EXPECT_NO_THROW(logcoe::flush());
