@@ -33,6 +33,16 @@ There are two executables:
 ./tests/logcoe_strip_tests
 ```
 
+Both executables take the same flags. `--help` lists the suites.
+
+```bash
+./tests/logcoe_tests --help
+./tests/logcoe_tests --suite=LogcoeThreadTests
+./tests/logcoe_tests --test=LogcoeThreadTests.ConcurrentFileLogging
+```
+
+`--all` (the default) runs everything.
+
 ## Project Structure
 
 ```
@@ -89,6 +99,8 @@ CI does not run sanitizers or benchmarks.
 - Put functional tests in `logcoe_tests.cpp` and concurrency tests in `logcoe_thread_tests.cpp`
 - Put tests for `std::expected` results in `logcoe_error_handling_tests.cpp`
 - A new public function also needs a case in `logcoe_strip_tests.cpp`
+- Name test files `*_tests.cpp` and fixtures `*Tests`
+- Add a new fixture to the suite list in the help text of `tests/main.cpp`
 
 ### Pull Request Process
 
