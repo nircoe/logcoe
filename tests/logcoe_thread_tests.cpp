@@ -11,6 +11,10 @@
 #include <thread>
 #include <vector>
 
+//==============================================================================
+//                    LogcoeThreadTests - Thread safety
+//==============================================================================
+
 class LogcoeThreadTests : public ::testing::Test
 {
 protected:
@@ -71,6 +75,10 @@ protected:
     }
 };
 
+//==============================================================================
+//                        Concurrent File Logging
+//==============================================================================
+
 TEST_F(LogcoeThreadTests, ConcurrentFileLogging)
 {
     logcoe::initialize(logcoe::log_level::debug, "", false, true, m_test_filename);
@@ -118,6 +126,10 @@ TEST_F(LogcoeThreadTests, ConcurrentFileLogging)
     EXPECT_EQ(actual_total, expected_total) << "Total messages: " << actual_total << ", expected: " << expected_total;
 }
 
+//==============================================================================
+//                        Concurrent Console Output
+//==============================================================================
+
 TEST_F(LogcoeThreadTests, ConcurrentConsoleOutput)
 {
     logcoe::initialize(logcoe::log_level::debug, "", true, false);
@@ -163,6 +175,10 @@ TEST_F(LogcoeThreadTests, ConcurrentConsoleOutput)
     int expected_total = NUM_THREADS * MESSAGES_PER_THREAD;
     EXPECT_EQ(actual_total, expected_total) << "Total messages: " << actual_total << ", expected: " << expected_total;
 }
+
+//==============================================================================
+//                        Concurrent Log Level Change
+//==============================================================================
 
 TEST_F(LogcoeThreadTests, ConcurrentLogLevelChange)
 {
@@ -238,6 +254,10 @@ TEST_F(LogcoeThreadTests, ConcurrentLogLevelChange)
     EXPECT_TRUE(std::filesystem::exists(m_test_filename));
     EXPECT_GT(std::filesystem::file_size(m_test_filename), 0);
 }
+
+//==============================================================================
+//                        Concurrent Output Config Change
+//==============================================================================
 
 TEST_F(LogcoeThreadTests, ConcurrentOutputConfigChange)
 {
