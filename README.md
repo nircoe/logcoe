@@ -38,6 +38,8 @@ FetchContent_MakeAvailable(logcoe)
 target_link_libraries(your_target PRIVATE logcoe)
 ```
 
+Linking `logcoe` turns on C++23 for `your_target`, so you don't have to set `CMAKE_CXX_STANDARD` yourself.
+
 ### 2. Use in your application
 
 ```cpp
