@@ -2,9 +2,9 @@ logcoe_ignore_external_warnings(testcoe)
 
 add_executable(logcoe_tests
     main.cpp
-    logcoe_test.cpp
-    logcoe_thread_test.cpp
-    logcoe_error_handling_test.cpp
+    logcoe_tests.cpp
+    logcoe_thread_tests.cpp
+    logcoe_error_handling_tests.cpp
 )
 
 target_link_libraries(logcoe_tests
@@ -24,7 +24,7 @@ add_custom_target(run_logcoe_tests
 
 add_executable(logcoe_strip_tests
     main.cpp
-    logcoe_strip_test.cpp
+    logcoe_strip_tests.cpp
 )
 
 target_link_libraries(logcoe_strip_tests

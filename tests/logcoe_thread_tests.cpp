@@ -11,7 +11,11 @@
 #include <thread>
 #include <vector>
 
-class LogcoeThreadTest : public ::testing::Test
+//==============================================================================
+//                    LogcoeThreadTests - Thread safety
+//==============================================================================
+
+class LogcoeThreadTests : public ::testing::Test
 {
 protected:
     std::string m_test_filename;
@@ -71,7 +75,11 @@ protected:
     }
 };
 
-TEST_F(LogcoeThreadTest, ConcurrentFileLogging)
+//==============================================================================
+//                        Concurrent File Logging
+//==============================================================================
+
+TEST_F(LogcoeThreadTests, ConcurrentFileLogging)
 {
     logcoe::initialize(logcoe::log_level::debug, "", false, true, m_test_filename);
 
@@ -118,7 +126,11 @@ TEST_F(LogcoeThreadTest, ConcurrentFileLogging)
     EXPECT_EQ(actual_total, expected_total) << "Total messages: " << actual_total << ", expected: " << expected_total;
 }
 
-TEST_F(LogcoeThreadTest, ConcurrentConsoleOutput)
+//==============================================================================
+//                        Concurrent Console Output
+//==============================================================================
+
+TEST_F(LogcoeThreadTests, ConcurrentConsoleOutput)
 {
     logcoe::initialize(logcoe::log_level::debug, "", true, false);
     logcoe::set_console_output(m_test_stream);
@@ -164,7 +176,11 @@ TEST_F(LogcoeThreadTest, ConcurrentConsoleOutput)
     EXPECT_EQ(actual_total, expected_total) << "Total messages: " << actual_total << ", expected: " << expected_total;
 }
 
-TEST_F(LogcoeThreadTest, ConcurrentLogLevelChange)
+//==============================================================================
+//                        Concurrent Log Level Change
+//==============================================================================
+
+TEST_F(LogcoeThreadTests, ConcurrentLogLevelChange)
 {
     logcoe::initialize(logcoe::log_level::info, "", false, true, m_test_filename);
 
@@ -239,7 +255,11 @@ TEST_F(LogcoeThreadTest, ConcurrentLogLevelChange)
     EXPECT_GT(std::filesystem::file_size(m_test_filename), 0);
 }
 
-TEST_F(LogcoeThreadTest, ConcurrentOutputConfigChange)
+//==============================================================================
+//                        Concurrent Output Config Change
+//==============================================================================
+
+TEST_F(LogcoeThreadTests, ConcurrentOutputConfigChange)
 {
     logcoe::initialize();
 
