@@ -23,6 +23,8 @@ target_include_directories(logcoe
         $<INSTALL_INTERFACE:include>
 )
 
+target_compile_features(logcoe INTERFACE cxx_std_23)
+
 logcoe_enable_strict_warnings(logcoe)
 
 if(MINGW)
