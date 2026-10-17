@@ -176,7 +176,7 @@ std::tm tm_now;
 
 ### Build System Integration
 - CMake: usable through FetchContent
-- Language standard: C++23, for `std::expected`
+- Language standard: C++23
 - The `logcoe` target requires `cxx_std_23` as an `INTERFACE` compile feature, so consumers that link it get C++23
 - Library type: static
 - Warnings are errors (`-Werror -Wall -Wextra -Wpedantic`, `/W4 /WX` on MSVC)

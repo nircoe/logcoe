@@ -4,7 +4,7 @@
 
 ### Prerequisites
 - CMake 3.22+
-- C++23 compiler with `<expected>` (GCC 12+, Clang 16+ with libc++, Xcode 15+, MSVC 2022 17.3+)
+- C++23 compiler with `<expected>` and `<format>` (GCC 13+, Clang 17+ with libc++, Xcode 15.3+, MSVC 2022 17.3+)
 - Git, CMake fetches testcoe from GitHub when `LOGCOE_BUILD_TESTS` is ON
 
 ### Building from Source
