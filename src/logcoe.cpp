@@ -3,10 +3,11 @@
 #include <cstddef>
 #include <ctime>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <iostream>
 #include <mutex>
-#include <sstream>
+#include <string_view>
 #include <system_error>
 #include <utility>
 
@@ -56,10 +57,8 @@ namespace
 
         std::string get_default_filename() { return "logcoe_" + format_time("%Y-%m-%d_%H-%M-%S") + ".log"; }
 
-        std::string get_log_level_as_string(log_level level)
+        constexpr std::string_view get_log_level_as_string(log_level level)
         {
-            if (g_init_counter == 0) return "";
-
             switch (level)
             {
                 case log_level::debug:
@@ -108,13 +107,15 @@ namespace
 
             const std::string &resolved_source = source.empty() ? g_default_source : source;
 
-            std::stringstream formatted_message;
-            formatted_message << "[" << get_current_timestamp() << "] ";
-            formatted_message << "[" << get_log_level_as_string(level) << "]";
-            if (!resolved_source.empty()) formatted_message << " [" << resolved_source << "]";
-            formatted_message << ": " << message;
+            std::string formatted_message;
+            if (resolved_source.empty())
+                formatted_message =
+                    std::format("[{}] [{}]: {}", get_current_timestamp(), get_log_level_as_string(level), message);
+            else
+                formatted_message = std::format("[{}] [{}] [{}]: {}", get_current_timestamp(),
+                                                get_log_level_as_string(level), resolved_source, message);
 
-            write_to_outputs(formatted_message.str(), level, flush_);
+            write_to_outputs(formatted_message, level, flush_);
         }
 
         void initialize(log_level level,
@@ -153,12 +154,12 @@ namespace
                 g_file_stream.open(g_filename);
                 if (!g_file_stream.is_open())
                 {
-                    write_to_outputs("[logcoe] ERROR: Failed to open log file: " + g_filename);
+                    write_to_outputs(std::format("[logcoe] ERROR: Failed to open log file: {}", g_filename));
                     g_use_file = false;
                 }
             }
 
-            write_to_outputs("[logcoe] Initialized, log level: " + get_log_level_as_string(g_log_level));
+            write_to_outputs(std::format("[logcoe] Initialized, log level: {}", get_log_level_as_string(g_log_level)));
         }
 
         void flush()
@@ -223,7 +224,7 @@ namespace
             g_file_stream.open(g_filename);
             if (!g_file_stream.is_open())
             {
-                write_to_outputs("[logcoe] ERROR: Failed to open log file: " + g_filename);
+                write_to_outputs(std::format("[logcoe] ERROR: Failed to open log file: {}", g_filename));
                 g_use_file = false;
                 return std::unexpected(logcoe::error_reason::file_open_failure);
             }
@@ -256,7 +257,7 @@ namespace
             g_use_file = false;
         }
 
-        [[nodiscard]] std::expected<void, logcoe::error_reason> set_time_format(const std::string &format)
+        [[nodiscard]] std::expected<void, logcoe::error_reason> set_time_format(const std::string &format_)
         {
             std::scoped_lock lock(g_mutex);
             if (g_init_counter == 0) return std::unexpected(logcoe::error_reason::not_initialized);
@@ -271,15 +272,15 @@ namespace
     #endif
 
             char buffer[256];
-            std::size_t result = std::strftime(buffer, sizeof(buffer), format.c_str(), &tm_now);
+            std::size_t result = std::strftime(buffer, sizeof(buffer), format_.c_str(), &tm_now);
             if (result == 0)
             {
-                write_to_outputs("[logcoe] ERROR: Invalid time format provided: \"" + format +
-                                 "\". Keeping the current format");
+                write_to_outputs(std::format(
+                    "[logcoe] ERROR: Invalid time format provided: \"{}\". Keeping the current format", format_));
                 return std::unexpected(logcoe::error_reason::invalid_time_format);
             }
 
-            g_time_format = format;
+            g_time_format = format_;
 
             return {};
         }
