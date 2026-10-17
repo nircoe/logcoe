@@ -10,7 +10,7 @@ on:
 jobs:
     build-and-test:
         name: ${{ matrix.name }}
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-26.04
         if: github.event.pull_request.draft == false || github.event_name == 'push'
         env:
             CACHE_CMAKE_OPTIONS: '-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache'
@@ -28,7 +28,7 @@ jobs:
                     - name: "Linux Clang Debug"
                       compiler: clang
                       cmake-generator: 'Ninja'
-                      cmake-options: '-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS=-stdlib=libc++ -DCMAKE_EXE_LINKER_FLAGS=-stdlib=libc++'
+                      cmake-options: '-DCMAKE_C_COMPILER=clang-22 -DCMAKE_CXX_COMPILER=clang++-22 -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS=-stdlib=libc++ -DCMAKE_EXE_LINKER_FLAGS=-stdlib=libc++'
                       test-target: logcoe_tests
 
                     - name: "Linux GCC Release"
@@ -45,7 +45,7 @@ jobs:
           if: matrix.compiler == 'clang'
           run: |
             sudo apt-get update
-            sudo apt-get install -y libc++-18-dev libc++abi-18-dev
+            sudo apt-get install -y libc++-22-dev libc++abi-22-dev
           shell: bash
 
         - name: Setup ccache
@@ -70,4 +70,16 @@ jobs:
           working-directory: build
           run: |
             ./tests/${{ matrix.test-target }}
+          shell: bash
+
+    format-check:
+        name: Format check
+        runs-on: ubuntu-26.04
+        if: github.event.pull_request.draft == false || github.event_name == 'push'
+        steps:
+        - name: Checkout repository
+          uses: actions/checkout@v7
+
+        - name: Check formatting
+          run: git ls-files '*.cpp' '*.hpp' | xargs clang-format --dry-run -Werror
           shell: bash
