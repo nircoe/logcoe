@@ -80,10 +80,6 @@ jobs:
         - name: Checkout repository
           uses: actions/checkout@v7
 
-        - name: Install clang-format
-          run: pipx install clang-format==23.1.1
-          shell: bash
-
         - name: Check formatting
           run: git ls-files '*.cpp' '*.hpp' | xargs clang-format --dry-run -Werror
           shell: bash

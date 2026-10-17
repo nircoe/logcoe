@@ -71,11 +71,12 @@ logcoe/
 
 GitHub Actions runs on pushes to `main` and on pull requests to `main`, skipping draft PRs.
 Each job configures with `-DLOGCOE_BUILD_TESTS=ON`, builds, then runs one test executable.
-Compilers are the ones on the GitHub runners, versions are not pinned.
+Compilers are the ones on the GitHub runners, versions are not pinned, except Linux Clang (22).
+The Linux jobs run on `ubuntu-26.04`.
 The Linux Clang job builds with libc++, because libstdc++'s `<expected>` is incompatible with Clang.
 
 - Windows: MSVC Debug and Release, MinGW (GCC) Debug
-- Linux: GCC Debug and Release, Clang with libc++ Debug
+- Linux: GCC Debug and Release, Clang with libc++ Debug, format check
 - macOS: Apple Clang Debug and Release
 
 Debug jobs run `logcoe_tests`, Release jobs run `logcoe_strip_tests`.
@@ -88,8 +89,7 @@ CI does not run sanitizers or benchmarks.
 - `g_` prefix for anonymous-namespace variables, `m_` prefix for class members
 - Allman braces (opening brace on its own line), 4-space indent
 - Includes in one block: `<logcoe.hpp>` first, then third-party (`<gtest/gtest.h>`), then std
-- `.clang-format` encodes the formatting rules. Run `git clang-format` before committing, it formats only the lines
-  you changed
+- `.clang-format` encodes the formatting rules, the CI format check enforces them
 - Trailing underscore for a parameter that would shadow another identifier in scope
   (a `flush` parameter becomes `flush_` so it does not shadow the `flush()` function)
 - Lines under 120 characters
