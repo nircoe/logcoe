@@ -2,8 +2,28 @@
 #include <gtest/gtest.h>
 #include <chrono>
 #include <filesystem>
+#include <format>
 #include <sstream>
 #include <string>
+
+namespace
+{
+    struct counted_value
+    {
+    };
+
+    int g_format_count = 0;
+} // namespace
+
+template <> struct std::formatter<counted_value>
+{
+    constexpr auto parse(std::format_parse_context &ctx) { return ctx.begin(); }
+    auto format(const counted_value &, std::format_context &ctx) const
+    {
+        ++g_format_count;
+        return std::format_to(ctx.out(), "counted");
+    }
+};
 
 //==============================================================================
 //                    LogcoeStripTests - NDEBUG stubs
@@ -83,6 +103,19 @@ TEST_F(LogcoeStripTests, ConsoleOutput)
     {
         logcoe::disable_console_output();
         EXPECT_TRUE(m_test_stream.str().empty());
+    }
+
+    // Test 3: f functions write nothing and skip std::format
+    {
+        g_format_count = 0;
+
+        logcoe::debugf("{}", counted_value{});
+        logcoe::infof("{}", counted_value{});
+        logcoe::warningf("{}", counted_value{});
+        logcoe::errorf("{}", counted_value{});
+
+        EXPECT_TRUE(m_test_stream.str().empty());
+        EXPECT_EQ(g_format_count, 0);
     }
 }
 

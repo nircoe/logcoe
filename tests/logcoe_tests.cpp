@@ -33,7 +33,23 @@ namespace
             return 0;
         }
     };
+
+    struct counted_value
+    {
+    };
+
+    int g_format_count = 0;
 } // namespace
+
+template <> struct std::formatter<counted_value>
+{
+    constexpr auto parse(std::format_parse_context &ctx) { return ctx.begin(); }
+    auto format(const counted_value &, std::format_context &ctx) const
+    {
+        ++g_format_count;
+        return std::format_to(ctx.out(), "counted");
+    }
+};
 
 //==============================================================================
 //                    LogcoeTests - Functional behavior
@@ -294,12 +310,62 @@ TEST_F(LogcoeTests, Console)
 }
 
 //==============================================================================
+//                        Formatted Logging
+//==============================================================================
+
+TEST_F(LogcoeTests, FormattedLogging)
+{
+    logcoe::initialize();
+    logcoe::set_console_output(m_test_stream);
+
+    // Test 1: each f function formats its arguments at its own level
+    {
+        logcoe::debugf("x = {}", 1);
+        logcoe::infof("{} and {}", "a", 2.5);
+        logcoe::warningf("no arguments");
+        logcoe::errorf("{:>4}|", 7);
+
+        std::string output = m_test_stream.str();
+        EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::debug, "x = 1"));
+        EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::info, "a and 2.5"));
+        EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::warning, "no arguments"));
+        EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::error, "   7|"));
+    }
+
+    // Test 2: the default source from initialize is used
+    {
+        logcoe::shutdown();
+        m_test_stream.str("");
+        logcoe::initialize(logcoe::log_level::debug, "DefaultSource");
+        logcoe::set_console_output(m_test_stream);
+
+        logcoe::infof("x = {}", 1);
+
+        EXPECT_TRUE(matches_log_pattern(m_test_stream.str(), logcoe::log_level::info, "x = 1", "DefaultSource"));
+    }
+
+    // Test 3: a filtered level skips std::format, an enabled one runs it
+    {
+        logcoe::set_log_level(logcoe::log_level::warning);
+        g_format_count = 0;
+
+        logcoe::debugf("{}", counted_value{});
+        logcoe::infof("{}", counted_value{});
+        EXPECT_EQ(g_format_count, 0);
+
+        logcoe::warningf("{}", counted_value{});
+        logcoe::errorf("{}", counted_value{});
+        EXPECT_EQ(g_format_count, 2);
+    }
+}
+
+//==============================================================================
 //                        Flush
 //==============================================================================
 
 TEST_F(LogcoeTests, Flush)
 {
-    // Test 1: flush false does not flush the console
+    // Test 1: flush false doesn't flush the console
     {
         logcoe::initialize(logcoe::log_level::debug);
         sync_counting_buf buf;
