@@ -16,7 +16,7 @@ jobs:
                       os: ubuntu-26.04
                       compiler: gcc
                       version: g++ --version
-                      compile: g++ -std=c++23 -g -Werror -Wall -Wextra -Wpedantic probe/chrono_probe.cpp -o probe
+                      compile: g++ -std=c++23 -g -Werror -Wall -Wextra -Wpedantic probe/chrono_probe.cpp -o probe_bin
 
                     - name: "Linux Clang libc++"
                       os: ubuntu-26.04
@@ -24,7 +24,7 @@ jobs:
                       version: clang++-22 --version
                       compile: >-
                           clang++-22 -std=c++23 -g -Werror -Wall -Wextra -Wpedantic -stdlib=libc++
-                          probe/chrono_probe.cpp -o probe
+                          probe/chrono_probe.cpp -o probe_bin
 
                     - name: "Linux Clang libc++ experimental"
                       os: ubuntu-26.04
@@ -32,26 +32,26 @@ jobs:
                       version: clang++-22 --version
                       compile: >-
                           clang++-22 -std=c++23 -g -Werror -Wall -Wextra -Wpedantic -stdlib=libc++
-                          -fexperimental-library probe/chrono_probe.cpp -o probe
+                          -fexperimental-library probe/chrono_probe.cpp -o probe_bin
 
                     - name: "macOS Clang"
                       os: macos-latest
                       compiler: apple
                       version: xcodebuild -version && clang++ --version
-                      compile: clang++ -std=c++23 -g -Werror -Wall -Wextra -Wpedantic probe/chrono_probe.cpp -o probe
+                      compile: clang++ -std=c++23 -g -Werror -Wall -Wextra -Wpedantic probe/chrono_probe.cpp -o probe_bin
 
                     - name: "Windows MSVC"
                       os: windows-latest
                       compiler: msvc
                       version: cl
-                      compile: cl -std:c++latest -EHsc -MDd -Od -W4 -WX probe/chrono_probe.cpp -Fe:probe.exe
+                      compile: cl -std:c++latest -EHsc -MDd -Od -W4 -WX probe/chrono_probe.cpp -Fe:probe_bin.exe
 
                     - name: "Windows MinGW"
                       os: windows-latest
                       compiler: gcc
                       version: g++ --version
                       compile: >-
-                          g++ -std=c++23 -g -Werror -Wall -Wextra -Wpedantic probe/chrono_probe.cpp -o probe
+                          g++ -std=c++23 -g -Werror -Wall -Wextra -Wpedantic probe/chrono_probe.cpp -o probe_bin
                           -static-libgcc -static-libstdc++ -static
 
         steps:
@@ -78,4 +78,4 @@ jobs:
 
         - name: Run probe
           continue-on-error: true
-          run: ./probe
+          run: ./probe_bin
