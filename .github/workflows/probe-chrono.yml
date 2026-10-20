@@ -1,0 +1,97 @@
+name: Probe chrono
+
+on:
+    push:
+        branches: [nircoe/main/chrono]
+
+jobs:
+    probe:
+        name: ${{ matrix.name }}
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - name: "Linux GCC"
+                      os: ubuntu-26.04
+                      compiler: gcc
+                      shell: bash
+                      version: g++ --version
+                      compile: g++ -std=c++23 -g -Werror -Wall -Wextra -Wpedantic probe/chrono_probe.cpp -o probe
+                      exe: ./probe
+
+                    - name: "Linux Clang libc++"
+                      os: ubuntu-26.04
+                      compiler: clang
+                      shell: bash
+                      version: clang++-22 --version
+                      compile: >-
+                          clang++-22 -std=c++23 -g -Werror -Wall -Wextra -Wpedantic -stdlib=libc++
+                          probe/chrono_probe.cpp -o probe
+                      exe: ./probe
+
+                    - name: "Linux Clang libc++ experimental"
+                      os: ubuntu-26.04
+                      compiler: clang
+                      shell: bash
+                      version: clang++-22 --version
+                      compile: >-
+                          clang++-22 -std=c++23 -g -Werror -Wall -Wextra -Wpedantic -stdlib=libc++
+                          -fexperimental-library probe/chrono_probe.cpp -o probe
+                      exe: ./probe
+
+                    - name: "macOS Clang"
+                      os: macos-latest
+                      compiler: apple
+                      shell: bash
+                      version: xcodebuild -version && clang++ --version
+                      compile: clang++ -std=c++23 -g -Werror -Wall -Wextra -Wpedantic probe/chrono_probe.cpp -o probe
+                      exe: ./probe
+
+                    - name: "Windows MSVC"
+                      os: windows-latest
+                      compiler: msvc
+                      shell: cmd
+                      version: cl
+                      compile: cl /std:c++latest /EHsc /MDd /Od /W4 /WX probe\chrono_probe.cpp /Fe:probe.exe
+                      exe: probe.exe
+
+                    - name: "Windows MinGW"
+                      os: windows-latest
+                      compiler: gcc
+                      shell: bash
+                      version: g++ --version
+                      compile: >-
+                          g++ -std=c++23 -g -Werror -Wall -Wextra -Wpedantic probe/chrono_probe.cpp -o probe
+                          -static-libgcc -static-libstdc++ -static
+                      exe: ./probe
+
+        steps:
+        - name: Checkout repository
+          uses: actions/checkout@v7
+
+        - name: Install libc++
+          if: matrix.compiler == 'clang'
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y libc++-22-dev libc++abi-22-dev
+          shell: bash
+
+        - name: Setup MSVC dev environment
+          if: matrix.compiler == 'msvc'
+          uses: ilammy/msvc-dev-cmd@v1.13.0
+
+        - name: Print toolchain version
+          continue-on-error: true
+          run: ${{ matrix.version }}
+          shell: ${{ matrix.shell }}
+
+        - name: Compile probe
+          continue-on-error: true
+          run: ${{ matrix.compile }}
+          shell: ${{ matrix.shell }}
+
+        - name: Run probe
+          continue-on-error: true
+          run: ${{ matrix.exe }}
+          shell: ${{ matrix.shell }}
