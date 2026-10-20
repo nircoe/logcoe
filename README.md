@@ -52,6 +52,7 @@ int main()
     logcoe::initialize(logcoe::log_level::info, std::string{}, true, false);
 
     logcoe::info("Application started");
+    logcoe::infof("Loaded {} files in {} ms", 12, 340);
     logcoe::warning("This is a warning message");
     logcoe::error("Critical error occurred", "ErrorHandler");
 
@@ -112,6 +113,10 @@ All functions are declared in `include/logcoe.hpp`, with their default arguments
 - The logging functions take an optional `source` and a `flush` flag (default `true`).
   A message logged with `flush==false` may stay in the stream buffer until the next `logcoe::flush()` or `shutdown()`.
   `logcoe::flush()` flushes the console and file outputs.
+- `debugf`, `infof`, `warningf` and `errorf` take a `std::format` string and arguments. `std::format_string` checks
+  the format string at compile time, so a bad one does not build. A message below the log level is not formatted. They use the default source and
+  `flush==true`. To pass a `source` or `flush`, format the message yourself and call the plain-string function.
+- The public header includes `<format>`.
 - `set_file_output` and `set_time_format` return `std::expected<void, logcoe::error_reason>`.
 - `set_file_output`, `set_time_format`, `is_initialized` and `get_log_level` are `[[nodiscard]]`.
 - `error_reason` is `file_open_failure`, `invalid_time_format` or `not_initialized`.
@@ -146,6 +151,7 @@ Defining `NDEBUG` (for example `-DCMAKE_BUILD_TYPE=Release`) replaces every func
 compile time. Call sites compile unchanged, but nothing is logged, formatted or written to a file:
 
 - `initialize`, `debug`/`info`/`warning`/`error`, `flush`, `shutdown` and the other setters do nothing.
+  `debugf`/`infof`/`warningf`/`errorf` return early because `get_log_level()` is `none`, so they do not format.
 - `is_initialized()` returns `false`.
 - `get_log_level()` returns `log_level::none`.
 - `set_file_output(...)` returns success and never creates a file.
