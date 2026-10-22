@@ -1,5 +1,6 @@
 #include <logcoe.hpp>
 #include <gtest/gtest.h>
+#include <support/counted_value.hpp>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -10,6 +11,8 @@
 #include <streambuf>
 #include <string>
 #include <system_error>
+
+using namespace test_utils;
 
 //==============================================================================
 //                        Test Helpers
@@ -33,6 +36,7 @@ namespace
             return 0;
         }
     };
+
 } // namespace
 
 //==============================================================================
@@ -290,6 +294,56 @@ TEST_F(LogcoeTests, Console)
 
         std::string output = m_test_stream.str();
         EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::info, "Message with source", "TestSource"));
+    }
+}
+
+//==============================================================================
+//                        Formatted Logging
+//==============================================================================
+
+TEST_F(LogcoeTests, FormattedLogging)
+{
+    logcoe::initialize();
+    logcoe::set_console_output(m_test_stream);
+
+    // Test 1: each f function formats its arguments at its own level
+    {
+        logcoe::debugf("x = {}", 1);
+        logcoe::infof("{} and {}", "a", 2.5);
+        logcoe::warningf("no arguments");
+        logcoe::errorf("{:>4}|", 7);
+
+        std::string output = m_test_stream.str();
+        EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::debug, "x = 1"));
+        EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::info, "a and 2.5"));
+        EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::warning, "no arguments"));
+        EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::error, "   7\\|"));
+    }
+
+    // Test 2: the default source from initialize is used
+    {
+        logcoe::shutdown();
+        m_test_stream.str("");
+        logcoe::initialize(logcoe::log_level::debug, "DefaultSource");
+        logcoe::set_console_output(m_test_stream);
+
+        logcoe::infof("x = {}", 1);
+
+        EXPECT_TRUE(matches_log_pattern(m_test_stream.str(), logcoe::log_level::info, "x = 1", "DefaultSource"));
+    }
+
+    // Test 3: a filtered level skips std::format, an enabled one runs it
+    {
+        logcoe::set_log_level(logcoe::log_level::warning);
+        g_format_count = 0;
+
+        logcoe::debugf("{}", counted_value{});
+        logcoe::infof("{}", counted_value{});
+        EXPECT_EQ(g_format_count, 0);
+
+        logcoe::warningf("{}", counted_value{});
+        logcoe::errorf("{}", counted_value{});
+        EXPECT_EQ(g_format_count, 2);
     }
 }
 

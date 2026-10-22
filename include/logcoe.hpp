@@ -1,8 +1,10 @@
 #pragma once
 
 #include <expected>
+#include <format>
 #include <iosfwd>
 #include <string>
+#include <utility>
 
 namespace logcoe
 {
@@ -44,5 +46,29 @@ namespace logcoe
     void warning(const std::string &message, const std::string &source = "", bool flush_ = true);
     void error(const std::string &message, const std::string &source = "", bool flush_ = true);
     void flush();
+
+    template <typename... args_t> void debugf(std::format_string<args_t...> fmt, args_t &&...args)
+    {
+        if (get_log_level() > log_level::debug) return;
+        debug(std::format(fmt, std::forward<args_t>(args)...));
+    }
+
+    template <typename... args_t> void infof(std::format_string<args_t...> fmt, args_t &&...args)
+    {
+        if (get_log_level() > log_level::info) return;
+        info(std::format(fmt, std::forward<args_t>(args)...));
+    }
+
+    template <typename... args_t> void warningf(std::format_string<args_t...> fmt, args_t &&...args)
+    {
+        if (get_log_level() > log_level::warning) return;
+        warning(std::format(fmt, std::forward<args_t>(args)...));
+    }
+
+    template <typename... args_t> void errorf(std::format_string<args_t...> fmt, args_t &&...args)
+    {
+        if (get_log_level() > log_level::error) return;
+        error(std::format(fmt, std::forward<args_t>(args)...));
+    }
 
 } // namespace logcoe

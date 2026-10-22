@@ -1,9 +1,12 @@
 #include <logcoe.hpp>
 #include <gtest/gtest.h>
+#include <support/counted_value.hpp>
 #include <chrono>
 #include <filesystem>
 #include <sstream>
 #include <string>
+
+using namespace test_utils;
 
 //==============================================================================
 //                    LogcoeStripTests - NDEBUG stubs
@@ -83,6 +86,19 @@ TEST_F(LogcoeStripTests, ConsoleOutput)
     {
         logcoe::disable_console_output();
         EXPECT_TRUE(m_test_stream.str().empty());
+    }
+
+    // Test 3: f functions write nothing and skip std::format
+    {
+        g_format_count = 0;
+
+        logcoe::debugf("{}", counted_value{});
+        logcoe::infof("{}", counted_value{});
+        logcoe::warningf("{}", counted_value{});
+        logcoe::errorf("{}", counted_value{});
+
+        EXPECT_TRUE(m_test_stream.str().empty());
+        EXPECT_EQ(g_format_count, 0);
     }
 }
 
