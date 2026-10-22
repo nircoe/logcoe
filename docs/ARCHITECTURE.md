@@ -233,6 +233,8 @@ info(message)  (the Logging Process above)
 - `debugf`, `infof`, `warningf` and `errorf` are templates in `logcoe.hpp`, so the format string is checked at
   compile time through `std::format_string`
 - `get_log_level()` and the plain-string function each lock `g_mutex`, one after the other, never nested
+- `std::format` runs in the caller's thread outside `g_mutex`. A user `std::formatter` that throws propagates out of
+  the call, the only way the API can throw
 - The level can change between the two locks. A message can then be formatted and still filtered in `write_to_outputs()`
 
 ## Message Formatting

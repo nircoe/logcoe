@@ -1,5 +1,6 @@
 #include <logcoe.hpp>
 #include <gtest/gtest.h>
+#include <support/counted_value.hpp>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -10,6 +11,8 @@
 #include <streambuf>
 #include <string>
 #include <system_error>
+
+using namespace test_utils;
 
 //==============================================================================
 //                        Test Helpers
@@ -34,22 +37,7 @@ namespace
         }
     };
 
-    struct counted_value
-    {
-    };
-
-    int g_format_count = 0;
 } // namespace
-
-template <> struct std::formatter<counted_value>
-{
-    constexpr auto parse(std::format_parse_context &ctx) { return ctx.begin(); }
-    auto format(const counted_value &, std::format_context &ctx) const
-    {
-        ++g_format_count;
-        return std::format_to(ctx.out(), "counted");
-    }
-};
 
 //==============================================================================
 //                    LogcoeTests - Functional behavior
@@ -329,7 +317,7 @@ TEST_F(LogcoeTests, FormattedLogging)
         EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::debug, "x = 1"));
         EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::info, "a and 2.5"));
         EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::warning, "no arguments"));
-        EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::error, "   7|"));
+        EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::error, "   7\\|"));
     }
 
     // Test 2: the default source from initialize is used
@@ -365,7 +353,7 @@ TEST_F(LogcoeTests, FormattedLogging)
 
 TEST_F(LogcoeTests, Flush)
 {
-    // Test 1: flush false doesn't flush the console
+    // Test 1: flush false does not flush the console
     {
         logcoe::initialize(logcoe::log_level::debug);
         sync_counting_buf buf;

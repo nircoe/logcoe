@@ -13,6 +13,11 @@ target_link_libraries(logcoe_tests
         testcoe
 )
 
+target_include_directories(logcoe_tests
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
 logcoe_enable_strict_warnings(logcoe_tests)
 logcoe_enable_static_mingw_runtime(logcoe_tests)
 
@@ -31,6 +36,11 @@ target_link_libraries(logcoe_strip_tests
     PRIVATE
         logcoe
         testcoe
+)
+
+target_include_directories(logcoe_strip_tests
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 logcoe_enable_strict_warnings(logcoe_strip_tests)

@@ -114,8 +114,9 @@ All functions are declared in `include/logcoe.hpp`, with their default arguments
   A message logged with `flush==false` may stay in the stream buffer until the next `logcoe::flush()` or `shutdown()`.
   `logcoe::flush()` flushes the console and file outputs.
 - `debugf`, `infof`, `warningf` and `errorf` take a `std::format` string and arguments. `std::format_string` checks
-  the format string at compile time, so a bad one does not build. A message below the log level is not formatted. They use the default source and
-  `flush==true`. To pass a `source` or `flush`, format the message yourself and call the plain-string function.
+  the format string at compile time, so a bad one does not build. A message below the log level is not formatted.
+  They use the default source and `flush==true`. To pass a `source` or `flush`, format the message yourself and call
+  the plain-string function. A `std::formatter` that throws propagates out of the call.
 - The public header includes `<format>`.
 - `set_file_output` and `set_time_format` return `std::expected<void, logcoe::error_reason>`.
 - `set_file_output`, `set_time_format`, `is_initialized` and `get_log_level` are `[[nodiscard]]`.

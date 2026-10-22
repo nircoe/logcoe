@@ -1,29 +1,12 @@
 #include <logcoe.hpp>
 #include <gtest/gtest.h>
+#include <support/counted_value.hpp>
 #include <chrono>
 #include <filesystem>
-#include <format>
 #include <sstream>
 #include <string>
 
-namespace
-{
-    struct counted_value
-    {
-    };
-
-    int g_format_count = 0;
-} // namespace
-
-template <> struct std::formatter<counted_value>
-{
-    constexpr auto parse(std::format_parse_context &ctx) { return ctx.begin(); }
-    auto format(const counted_value &, std::format_context &ctx) const
-    {
-        ++g_format_count;
-        return std::format_to(ctx.out(), "counted");
-    }
-};
+using namespace test_utils;
 
 //==============================================================================
 //                    LogcoeStripTests - NDEBUG stubs
