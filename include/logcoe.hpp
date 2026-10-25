@@ -4,6 +4,7 @@
 #include <format>
 #include <iosfwd>
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace logcoe
@@ -41,10 +42,10 @@ namespace logcoe
     [[nodiscard]] bool is_initialized();
     [[nodiscard]] log_level get_log_level();
 
-    void debug(const std::string &message, const std::string &source = "", bool flush_ = true);
-    void info(const std::string &message, const std::string &source = "", bool flush_ = true);
-    void warning(const std::string &message, const std::string &source = "", bool flush_ = true);
-    void error(const std::string &message, const std::string &source = "", bool flush_ = true);
+    void debug(std::string_view message, std::string_view source = "", bool flush_ = true);
+    void info(std::string_view message, std::string_view source = "", bool flush_ = true);
+    void warning(std::string_view message, std::string_view source = "", bool flush_ = true);
+    void error(std::string_view message, std::string_view source = "", bool flush_ = true);
     void flush();
 
     template <typename... args_t> void debugf(std::format_string<args_t...> fmt, args_t &&...args)
