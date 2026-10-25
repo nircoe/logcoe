@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <sstream>
 #include <string>
+#include <string_view>
 
 using namespace test_utils;
 
@@ -99,6 +100,16 @@ TEST_F(LogcoeStripTests, ConsoleOutput)
 
         EXPECT_TRUE(m_test_stream.str().empty());
         EXPECT_EQ(g_format_count, 0);
+    }
+
+    // Test 4: string_view and std::string arguments write nothing
+    {
+        const std::string text = "text";
+
+        logcoe::info(std::string_view(text), std::string_view("source"));
+        logcoe::error(text, text);
+
+        EXPECT_TRUE(m_test_stream.str().empty());
     }
 }
 

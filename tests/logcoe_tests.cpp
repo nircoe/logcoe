@@ -10,6 +10,7 @@
 #include <sstream>
 #include <streambuf>
 #include <string>
+#include <string_view>
 #include <system_error>
 
 using namespace test_utils;
@@ -294,6 +295,51 @@ TEST_F(LogcoeTests, Console)
 
         std::string output = m_test_stream.str();
         EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::info, "Message with source", "TestSource"));
+    }
+}
+
+//==============================================================================
+//                        String View Parameters
+//==============================================================================
+
+TEST_F(LogcoeTests, StringViewParameters)
+{
+    logcoe::initialize();
+    logcoe::set_console_output(m_test_stream);
+
+    // Test 1: message and source are read by their length, not up to a null terminator
+    {
+        const std::string buffer = "HelloWorld";
+        const std::string_view view = buffer;
+
+        logcoe::info(view.substr(0, 5), view.substr(5));
+
+        EXPECT_TRUE(m_test_stream.str().ends_with("[World]: Hello\n"));
+    }
+
+    // Test 2: literal and std::string callers log the same text
+    {
+        m_test_stream.str("");
+
+        logcoe::warning("literal message", "literal_source");
+        logcoe::error(std::string("owned message"), std::string("owned_source"));
+
+        std::string output = m_test_stream.str();
+        EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::warning, "literal message", "literal_source"));
+        EXPECT_TRUE(matches_log_pattern(output, logcoe::log_level::error, "owned message", "owned_source"));
+    }
+
+    // Test 3: an empty source view falls back to the default source
+    {
+        logcoe::shutdown();
+        m_test_stream.str("");
+        logcoe::initialize(logcoe::log_level::debug, "DefaultSource");
+        logcoe::set_console_output(m_test_stream);
+
+        logcoe::debug(std::string_view("view message"), std::string_view());
+
+        EXPECT_TRUE(
+            matches_log_pattern(m_test_stream.str(), logcoe::log_level::debug, "view message", "DefaultSource"));
     }
 }
 

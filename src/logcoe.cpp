@@ -100,12 +100,12 @@ namespace
             if (g_use_file && g_file_stream.is_open()) g_file_stream.flush();
         }
 
-        void log(log_level level, const std::string &message, const std::string &source, bool flush_)
+        void log(log_level level, std::string_view message, std::string_view source, bool flush_)
         {
             std::scoped_lock lock(g_mutex);
             if (g_init_counter == 0) return;
 
-            const std::string &resolved_source = source.empty() ? g_default_source : source;
+            const std::string_view resolved_source = source.empty() ? std::string_view{g_default_source} : source;
 
             std::string formatted_message;
             if (resolved_source.empty())
@@ -299,22 +299,22 @@ namespace
             return g_log_level;
         }
 
-        void debug(const std::string &message, const std::string &source, bool flush_)
+        void debug(std::string_view message, std::string_view source, bool flush_)
         {
             log(log_level::debug, message, source, flush_);
         }
 
-        void info(const std::string &message, const std::string &source, bool flush_)
+        void info(std::string_view message, std::string_view source, bool flush_)
         {
             log(log_level::info, message, source, flush_);
         }
 
-        void warning(const std::string &message, const std::string &source, bool flush_)
+        void warning(std::string_view message, std::string_view source, bool flush_)
         {
             log(log_level::warning, message, source, flush_);
         }
 
-        void error(const std::string &message, const std::string &source, bool flush_)
+        void error(std::string_view message, std::string_view source, bool flush_)
         {
             log(log_level::error, message, source, flush_);
         }
@@ -340,10 +340,10 @@ namespace logcoe
     bool is_initialized() { return false; }
     log_level get_log_level() { return log_level::none; }
 
-    void debug(const std::string &, const std::string &, bool) { }
-    void info(const std::string &, const std::string &, bool) { }
-    void warning(const std::string &, const std::string &, bool) { }
-    void error(const std::string &, const std::string &, bool) { }
+    void debug(std::string_view, std::string_view, bool) { }
+    void info(std::string_view, std::string_view, bool) { }
+    void warning(std::string_view, std::string_view, bool) { }
+    void error(std::string_view, std::string_view, bool) { }
     void flush() { }
 #else
     void initialize(log_level level,
@@ -373,19 +373,19 @@ namespace logcoe
     bool is_initialized() { return internal::is_initialized(); }
     log_level get_log_level() { return internal::get_log_level(); }
 
-    void debug(const std::string &message, const std::string &source, bool flush_)
+    void debug(std::string_view message, std::string_view source, bool flush_)
     {
         internal::debug(message, source, flush_);
     }
-    void info(const std::string &message, const std::string &source, bool flush_)
+    void info(std::string_view message, std::string_view source, bool flush_)
     {
         internal::info(message, source, flush_);
     }
-    void warning(const std::string &message, const std::string &source, bool flush_)
+    void warning(std::string_view message, std::string_view source, bool flush_)
     {
         internal::warning(message, source, flush_);
     }
-    void error(const std::string &message, const std::string &source, bool flush_)
+    void error(std::string_view message, std::string_view source, bool flush_)
     {
         internal::error(message, source, flush_);
     }
